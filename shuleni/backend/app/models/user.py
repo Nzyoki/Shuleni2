@@ -61,7 +61,11 @@ class User(db.Model):
                 'create_assessments',
                 'grade_assessments',
                 'participate_chat',
-                'send_notifications'
+                'send_notifications',
+                'view_class_reports',
+                'view_classes',
+                'view_class_students',
+                'view_assessments'
             ],
             'student': [
                 'view_resources',

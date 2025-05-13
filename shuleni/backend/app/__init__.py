@@ -58,11 +58,15 @@ def create_app(test_config=None):
     migrate.init_app(app, db)
     jwt.init_app(app)
     
-    # Allow connections from all origins
-    socketio.init_app(app, cors_allowed_origins="*")
+    # Configure CORS with proper settings
+    CORS(app, 
+         resources={r"/api/*": {"origins": "*"}},
+         supports_credentials=True,
+         allow_headers=["Content-Type", "Authorization"],
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
     
-    # Configure CORS with wider permissions
-    CORS(app, supports_credentials=False)
+    # Initialize SocketIO with CORS settings
+    socketio.init_app(app, cors_allowed_origins="*")
     
     # Register blueprints
     from .routes.auth import bp as auth_bp
@@ -71,6 +75,7 @@ def create_app(test_config=None):
     from .routes.attendance import bp as attendance_bp
     from .routes.resources import bp as resources_bp
     from .routes.assessments import bp as assessments_bp
+    from .routes.users import bp as users_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(schools_bp)
@@ -78,13 +83,6 @@ def create_app(test_config=None):
     app.register_blueprint(attendance_bp)
     app.register_blueprint(resources_bp)
     app.register_blueprint(assessments_bp)
+    app.register_blueprint(users_bp)
     
-    # Add CORS headers on each response - this ensures they're always present
-    @app.after_request
-    def after_request(response):
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-        response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-        return response
-        
-    return app
+    return app 

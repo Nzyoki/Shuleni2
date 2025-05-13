@@ -2,7 +2,7 @@ import api from './api';
 
 export const login = async (credentials) => {
     try {
-        const response = await api.post('/auth/login', {
+        const response = await api.post('/api/auth/login', {
             email: credentials.email,
             password: credentials.password
         });
@@ -20,7 +20,7 @@ export const login = async (credentials) => {
 
 export const register = async (userData) => {
     try {
-        const response = await api.post('/auth/register', userData);
+        const response = await api.post('/api/auth/register', userData);
         if (response.data.access_token) {
             localStorage.setItem('token', response.data.access_token);
             return response.data;
@@ -39,7 +39,7 @@ export const logout = () => {
 
 export const getCurrentUser = async () => {
     try {
-        const response = await api.get('/auth/me');
+        const response = await api.get('/api/auth/me');
         return response.data;
     } catch (error) {
         console.error('Get current user error:', error.response?.data || error.message);
@@ -117,8 +117,32 @@ export const hasPermission = (user, permission) => {
             'manage_resources',
             'manage_assessments',
             'view_attendance',
+            'manage_attendance',
             'monitor_chat',
-            'view_school_reports'
+            'view_school_reports',
+            'view_reports',
+            'view_analytics',
+            'view_school_analytics',
+            'manage_users',
+            'create_users',
+            'edit_users',
+            'delete_users',
+            'manage_school_students',
+            'manage_school_classes',
+            'view_class_students',
+            'manage_class_students',
+            'view_class_reports',
+            'view_resources',
+            'create_resources',
+            'edit_resources',
+            'delete_resources',
+            'view_assessments',
+            'create_assessments',
+            'edit_assessments',
+            'grade_assessments',
+            'manage_class_assessments',
+            'participate_chat',
+            'send_notifications'
         ],
         teacher: [
             'manage_class',
@@ -128,7 +152,9 @@ export const hasPermission = (user, permission) => {
             'grade_assessments',
             'participate_chat',
             'send_notifications',
-            'view_class_reports'
+            'view_class_reports',
+            'view_class_students',
+            'view_classes'
         ],
         student: [
             'view_resources',

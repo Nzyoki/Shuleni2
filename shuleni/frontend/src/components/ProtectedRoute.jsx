@@ -19,7 +19,7 @@ const ProtectedRoute = ({ children, requiredPermissions = [] }) => {
     }
 
     if (requiredPermissions.length > 0) {
-        const hasRequiredPermissions = requiredPermissions.every(permission =>
+        const hasRequiredPermissions = requiredPermissions.some(permission =>
             hasPermission(permission)
         );
 

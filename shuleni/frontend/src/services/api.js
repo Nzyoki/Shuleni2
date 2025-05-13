@@ -3,7 +3,7 @@ import axios from 'axios';
 // Try to connect to the API with fallback options
 const getApiInstance = () => {
     const instance = axios.create({
-        baseURL: 'http://localhost:5000/api',
+        baseURL: 'http://localhost:5000',
         headers: {
             'Content-Type': 'application/json',
         },
@@ -19,7 +19,7 @@ const getApiInstance = () => {
 
                 // Copy the original request configuration
                 const fallbackConfig = { ...error.config };
-                fallbackConfig.baseURL = 'http://127.0.0.1:5000/api';
+                fallbackConfig.baseURL = 'http://127.0.0.1:5000';
 
                 return axios(fallbackConfig);
             }

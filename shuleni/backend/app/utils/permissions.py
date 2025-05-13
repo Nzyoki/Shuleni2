@@ -75,11 +75,39 @@ def check_permission(user: User, permission: str) -> bool:
             'manage_teachers',
             'manage_students',
             'manage_classes',
+            'create_classes',
+            'edit_classes',
+            'delete_classes',
+            'add_class',
             'manage_resources',
             'manage_assessments',
             'view_attendance',
+            'manage_attendance',
             'monitor_chat',
-            'view_school_reports'
+            'view_school_reports',
+            'view_reports',
+            'view_analytics',
+            'view_school_analytics',
+            'manage_users',
+            'create_users',
+            'edit_users',
+            'delete_users',
+            'manage_school_students',
+            'manage_school_classes',
+            'view_class_students',
+            'manage_class_students',
+            'view_class_reports',
+            'view_resources',
+            'create_resources',
+            'edit_resources',
+            'delete_resources',
+            'view_assessments',
+            'create_assessments',
+            'edit_assessments',
+            'grade_assessments',
+            'manage_class_assessments',
+            'participate_chat',
+            'send_notifications'
         ],
         'teacher': [
             'manage_class',
@@ -89,7 +117,10 @@ def check_permission(user: User, permission: str) -> bool:
             'grade_assessments',
             'participate_chat',
             'send_notifications',
-            'view_class_reports'
+            'view_class_reports',
+            'view_classes',
+            'view_class_students',
+            'view_assessments'
         ],
         'student': [
             'view_resources',
@@ -100,8 +131,12 @@ def check_permission(user: User, permission: str) -> bool:
         ]
     }
 
-    # If permission is an array, check if user has any of them
+    # Check if user has any of the permissions (if a list is provided)
     if isinstance(permission, list):
-        return any(perm in role_permissions.get(user.role, []) for perm in permission)
+        for p in permission:
+            if p in role_permissions.get(user.role, []):
+                return True
+        return False
     
+    # Check for a single permission
     return permission in role_permissions.get(user.role, []) 
