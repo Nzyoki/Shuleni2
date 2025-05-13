@@ -67,7 +67,7 @@ function App() {
                                 </ProtectedRoute>
                             } />
                             <Route path="classes" element={
-                                <ProtectedRoute requiredPermissions={["manage_classes", "manage_school_classes", "manage_class_students", "view_class_students"]}>
+                                <ProtectedRoute requiredPermissions={["manage_classes", "manage_school_classes", "manage_class_students", "view_class_students", "view_classes"]}>
                                     <ClassManagement />
                                 </ProtectedRoute>
                             } />

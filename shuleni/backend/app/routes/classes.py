@@ -52,15 +52,29 @@ def get_classes():
     user = User.query.get(current_user_id)
     
     if user.role == 'super_admin':
+        # Super admin can see all classes
         classes = Class.query.all()
     elif user.role == 'school_admin':
+        # School admin can see all classes in their school
         classes = Class.query.filter_by(school_id=user.school_id).all()
     elif user.role == 'teacher':
-        classes = Class.query.filter_by(teacher_id=current_user_id).all()
+        # Teachers can see all classes in their school
+        classes = Class.query.filter_by(school_id=user.school_id).all()
     else:  # student
-        classes = Class.query.join(class_students).filter(
+        # Students can see all classes in their school
+        classes = Class.query.filter_by(school_id=user.school_id).all()
+        
+        # Highlight classes they're enrolled in by adding an "enrolled" flag
+        enrolled_class_ids = db.session.query(class_students.c.class_id).filter(
             class_students.c.student_id == current_user_id
         ).all()
+        enrolled_class_ids = [id[0] for id in enrolled_class_ids]
+        
+        # Return classes with enrollment information
+        return jsonify({
+            'classes': [{**class_.to_dict(), 'enrolled': class_.id in enrolled_class_ids} 
+                       for class_ in classes]
+        }), 200
     
     return jsonify({
         'classes': [class_.to_dict() for class_ in classes]

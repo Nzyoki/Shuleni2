@@ -23,15 +23,13 @@ def get_all_assessments():
             school_id = current_user.school_id
             assessments = Assessment.query.join(Class).filter(Class.school_id == school_id).all()
         elif current_user.role == 'teacher':
-            # Teacher can see assessments for classes they teach
-            assessments = Assessment.query.join(Class).filter(
-                Class.teacher_id == current_user_id
-            ).all()
+            # Teacher can see assessments for all classes in their school
+            school_id = current_user.school_id
+            assessments = Assessment.query.join(Class).filter(Class.school_id == school_id).all()
         else:  # student
-            # Students can see assessments for classes they are enrolled in
-            assessments = Assessment.query.join(Class).filter(
-                Class.students.any(id=current_user_id)
-            ).all()
+            # Students can see assessments for all classes in their school
+            school_id = current_user.school_id
+            assessments = Assessment.query.join(Class).filter(Class.school_id == school_id).all()
         
         return jsonify({
             'assessments': [a.to_dict() for a in assessments]
@@ -45,6 +43,16 @@ def get_assessments_by_class(class_id):
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
     class_ = Class.query.get_or_404(class_id)
+    
+    # Allow students to view assessments from any class in their school
+    if current_user.role == 'student' and current_user.school_id == class_.school_id:
+        try:
+            assessments = Assessment.query.filter_by(class_id=class_id).all()
+            return jsonify({
+                'assessments': [a.to_dict() for a in assessments]
+            }), 200
+        except Exception as e:
+            return jsonify({'error': f'Failed to fetch assessments: {str(e)}'}), 500
     
     # Check if user has permission to view assessments for this class
     if not (check_permission(current_user, ['manage_assessments', 'view_assessments']) or 

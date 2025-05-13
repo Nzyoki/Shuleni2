@@ -12,10 +12,6 @@ def get_users():
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
     
-    # Check permissions - only super_admin or school_admin can list users
-    if not check_permission(current_user, ['manage_users', 'manage_all_users']):
-        return jsonify({'error': 'You do not have permission to view users'}), 403
-    
     try:
         # Get query parameters
         role = request.args.get('role')
@@ -23,6 +19,28 @@ def get_users():
         
         # Base query
         query = User.query
+        
+        # Check if user is requesting only students from their school
+        if role == 'student' and current_user.school_id is not None:
+            # Allow any user to view students from their own school
+            query = query.filter(User.role == 'student', User.school_id == current_user.school_id)
+            users = query.all()
+            return jsonify({
+                'users': [user.to_dict() for user in users]
+            }), 200
+            
+        # Check if user is requesting only teachers from their school
+        if role == 'teacher' and current_user.school_id is not None:
+            # Allow any user to view teachers from their own school
+            query = query.filter(User.role == 'teacher', User.school_id == current_user.school_id)
+            users = query.all()
+            return jsonify({
+                'users': [user.to_dict() for user in users]
+            }), 200
+        
+        # For all other requests, check admin permissions
+        if not check_permission(current_user, ['manage_users', 'manage_all_users']):
+            return jsonify({'error': 'You do not have permission to view users'}), 403
         
         # Apply filters based on role and permissions
         if current_user.role == 'super_admin':
