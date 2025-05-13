@@ -7,7 +7,6 @@ import {
     ListItem,
     ListItemText,
     ListItemAvatar,
-    ListItemSecondary,
     Avatar,
     Typography,
     TextField,
@@ -15,10 +14,12 @@ import {
     CircularProgress,
     Alert,
     Badge,
-    Tooltip
+    Tooltip,
+    Chip
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import PersonIcon from '@mui/icons-material/Person';
+import GroupIcon from '@mui/icons-material/Group';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import { useAuth } from '../contexts/AuthContext';
 import { getMessages, getChatContacts, sendMessage, subscribeToMessages, getNotificationCount, markNotificationsRead } from '../services/chat';
@@ -61,7 +62,9 @@ const Chat = () => {
         // Subscribe to new messages and notifications
         const unsubscribeMessages = subscribeToMessages((message) => {
             setMessages((prevMessages) => [...prevMessages, message]);
-            if (message.recipient_id === user.id) {
+            if (message.chat_type === 'direct' && message.recipient_id === user.id) {
+                setNotificationCount((prev) => prev + 1);
+            } else if (message.chat_type === 'class' && message.sender_id !== user.id) {
                 setNotificationCount((prev) => prev + 1);
             }
             scrollToBottom();
@@ -104,7 +107,10 @@ const Chat = () => {
     };
 
     const getContactDisplayName = (contact) => {
-        return `${contact.first_name} ${contact.last_name} (${contact.email})`;
+        if (contact.type === 'class') {
+            return contact.name;
+        }
+        return `${contact.name} (${contact.email})`;
     };
 
     return (
@@ -123,15 +129,26 @@ const Chat = () => {
                                 >
                                     <ListItemAvatar>
                                         <Avatar>
-                                            <PersonIcon />
+                                            {contact.type === 'class' ? <GroupIcon /> : <PersonIcon />}
                                         </Avatar>
                                     </ListItemAvatar>
                                     <ListItemText
-                                        primary={getContactDisplayName(contact)}
+                                        primary={
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                {getContactDisplayName(contact)}
+                                                {contact.type === 'class' && (
+                                                    <Chip
+                                                        size="small"
+                                                        label={`${contact.member_count} members`}
+                                                        color="primary"
+                                                    />
+                                                )}
+                                            </Box>
+                                        }
                                         secondary={
                                             <>
                                                 <Typography component="span" variant="body2" color="text.primary">
-                                                    {contact.role}
+                                                    {contact.type === 'class' ? 'Class Chat' : contact.role}
                                                 </Typography>
                                                 {contact.last_message && (
                                                     <Typography component="span" variant="body2" color="text.secondary">
@@ -157,9 +174,21 @@ const Chat = () => {
                             <>
                                 {/* Chat Header */}
                                 <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-                                    <Typography variant="h6">
-                                        {getContactDisplayName(selectedContact)}
-                                    </Typography>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Avatar>
+                                            {selectedContact.type === 'class' ? <GroupIcon /> : <PersonIcon />}
+                                        </Avatar>
+                                        <Box>
+                                            <Typography variant="h6">
+                                                {getContactDisplayName(selectedContact)}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                {selectedContact.type === 'class' ?
+                                                    `${selectedContact.member_count} members` :
+                                                    selectedContact.role}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
                                 </Box>
 
                                 {/* Messages */}
@@ -176,7 +205,8 @@ const Chat = () => {
                                                 key={message.id}
                                                 sx={{
                                                     display: 'flex',
-                                                    justifyContent: message.sender_id === user.id ? 'flex-end' : 'flex-start',
+                                                    flexDirection: 'column',
+                                                    alignItems: message.sender_id === user.id ? 'flex-end' : 'flex-start',
                                                     mb: 2
                                                 }}
                                             >
@@ -189,6 +219,11 @@ const Chat = () => {
                                                         p: 2
                                                     }}
                                                 >
+                                                    {selectedContact.type === 'class' && message.sender_id !== user.id && (
+                                                        <Typography variant="caption" sx={{ display: 'block', mb: 0.5, fontWeight: 'bold' }}>
+                                                            {message.sender.first_name} {message.sender.last_name}
+                                                        </Typography>
+                                                    )}
                                                     <Typography variant="body1">{message.message}</Typography>
                                                     <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>
                                                         {formatMessageTime(message.timestamp)}
@@ -221,7 +256,7 @@ const Chat = () => {
                         ) : (
                             <Box display="flex" justifyContent="center" alignItems="center" height="100%">
                                 <Typography variant="h6" color="text.secondary">
-                                    Select a contact to start chatting
+                                    Select a contact or class to start chatting
                                 </Typography>
                             </Box>
                         )}

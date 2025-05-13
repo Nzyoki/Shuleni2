@@ -24,8 +24,8 @@ def create_app(test_config=None):
             SECRET_KEY='dev',
             SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(app.instance_path, 'shuleni.db'),
             SQLALCHEMY_TRACK_MODIFICATIONS=False,
-            JWT_SECRET_KEY='super-secret',  # Change this in production!
-            MAX_CONTENT_LENGTH=16 * 1024 * 1024,  # 16MB max file size
+            JWT_SECRET_KEY='dev-jwt-secret',
+            JWT_ACCESS_TOKEN_EXPIRES=timedelta(hours=1)
         )
     else:
         # Load the test config if passed in
@@ -41,18 +41,15 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    # Initialize extensions with the app
+    # Initialize Flask extensions
+    CORS(app)
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
     socketio.init_app(app)
-    
-    # Enable CORS
-    CORS(app)
 
-    # Import and register blueprints
+    # Register blueprints
     from .routes import auth, users, schools, classes, assessments, resources, chat
-    
     app.register_blueprint(auth.bp)
     app.register_blueprint(users.bp)
     app.register_blueprint(schools.bp)
