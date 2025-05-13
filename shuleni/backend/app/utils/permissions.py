@@ -125,6 +125,7 @@ def check_permission(user: User, permission: str) -> bool:
         'student': [
             'view_resources',
             'take_assessments',
+            'submit_assessments',
             'view_attendance',
             'participate_chat',
             'update_profile',

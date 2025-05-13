@@ -1,10 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
-from ..models.attendance import Attendance
-from ..models.user import User
-from ..models.class_ import Class
-from .. import db
+from ..models import Attendance, Class, User, db
 
 bp = Blueprint('attendance', __name__, url_prefix='/api/attendance')
 
@@ -12,96 +9,102 @@ bp = Blueprint('attendance', __name__, url_prefix='/api/attendance')
 @jwt_required()
 def mark_attendance(class_id):
     current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
     class_ = Class.query.get_or_404(class_id)
     
-    if current_user.id != class_.teacher_id:
-        return jsonify({'error': 'Permission denied'}), 403
-        
+    # Check if user is the teacher of this class
+    if class_.teacher_id != current_user_id:
+        return jsonify({'error': 'Only the class teacher can mark attendance'}), 403
+    
     data = request.get_json()
-    if not data or 'date' not in data or 'records' not in data:
+    if not data or not data.get('date') or not data.get('attendance_records'):
         return jsonify({'error': 'Date and attendance records are required'}), 400
-        
+    
     try:
-        date = datetime.fromisoformat(data['date'].replace('Z', '+00:00')).date()
+        date = datetime.strptime(data['date'], '%Y-%m-%d').date()
     except ValueError:
-        return jsonify({'error': 'Invalid date format'}), 400
-        
-    for record in data['records']:
-        student_id = record.get('student_id')
-        status = record.get('status')
-        
-        if not student_id or not status:
+        return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+    
+    # Process attendance records
+    for record in data['attendance_records']:
+        if not record.get('student_id') or not record.get('status'):
             continue
-            
-        student = User.query.get(student_id)
+        
+        # Check if student is enrolled in the class
+        student = User.query.get(record['student_id'])
         if not student or student not in class_.students:
             continue
-            
+        
+        # Create or update attendance record
         attendance = Attendance.query.filter_by(
             class_id=class_id,
-            student_id=student_id,
+            student_id=record['student_id'],
             date=date
         ).first()
         
         if attendance:
-            attendance.status = status
+            attendance.status = record['status']
+            attendance.notes = record.get('notes')
         else:
             attendance = Attendance(
                 class_id=class_id,
-                student_id=student_id,
+                student_id=record['student_id'],
                 date=date,
-                status=status,
-                marked_by=current_user_id
+                status=record['status'],
+                notes=record.get('notes')
             )
             db.session.add(attendance)
-            
+    
     db.session.commit()
-    return jsonify({'message': 'Attendance marked successfully'}), 200
+    
+    return jsonify({
+        'message': 'Attendance marked successfully',
+        'date': date.isoformat()
+    }), 200
 
-@bp.route('/class/<int:class_id>', methods=['GET'])
+@bp.route('/class/<int:class_id>/date/<date>', methods=['GET'])
 @jwt_required()
-def get_class_attendance(class_id):
+def get_attendance(class_id, date):
     current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
     class_ = Class.query.get_or_404(class_id)
     
-    if not (current_user.id == class_.teacher_id or current_user in class_.students):
-        return jsonify({'error': 'Permission denied'}), 403
-        
-    date = request.args.get('date')
-    if date:
-        try:
-            date = datetime.fromisoformat(date.replace('Z', '+00:00')).date()
-            attendance = Attendance.query.filter_by(
-                class_id=class_id,
-                date=date
-            ).all()
-        except ValueError:
-            return jsonify({'error': 'Invalid date format'}), 400
-    else:
-        attendance = Attendance.query.filter_by(class_id=class_id).all()
-        
-    return jsonify([record.to_dict() for record in attendance]), 200
-
-@bp.route('/student/<int:student_id>', methods=['GET'])
-@jwt_required()
-def get_student_attendance(student_id):
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
-    student = User.query.get_or_404(student_id)
+    # Check if user is the teacher or a student in the class
+    if class_.teacher_id != current_user_id:
+        user = User.query.get(current_user_id)
+        if user not in class_.students:
+            return jsonify({'error': 'Unauthorized access'}), 403
     
-    if not (current_user.id == student_id or 
-            any(current_user.id == class_.teacher_id for class_ in student.classes_enrolled)):
-        return jsonify({'error': 'Permission denied'}), 403
-        
-    class_id = request.args.get('class_id')
-    if class_id:
-        attendance = Attendance.query.filter_by(
-            student_id=student_id,
-            class_id=class_id
-        ).all()
-    else:
-        attendance = Attendance.query.filter_by(student_id=student_id).all()
-        
-    return jsonify([record.to_dict() for record in attendance]), 200 
+    try:
+        date = datetime.strptime(date, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+    
+    attendance_records = Attendance.query.filter_by(
+        class_id=class_id,
+        date=date
+    ).all()
+    
+    return jsonify({
+        'date': date.isoformat(),
+        'attendance': [record.to_dict() for record in attendance_records]
+    }), 200
+
+@bp.route('/student/<int:student_id>/class/<int:class_id>', methods=['GET'])
+@jwt_required()
+def get_student_attendance(student_id, class_id):
+    current_user_id = get_jwt_identity()
+    class_ = Class.query.get_or_404(class_id)
+    
+    # Check if user is the teacher or the student themselves
+    if class_.teacher_id != current_user_id and current_user_id != student_id:
+        return jsonify({'error': 'Unauthorized access'}), 403
+    
+    attendance_records = Attendance.query.filter_by(
+        class_id=class_id,
+        student_id=student_id
+    ).order_by(Attendance.date.desc()).all()
+    
+    return jsonify({
+        'student_id': student_id,
+        'class_id': class_id,
+        'attendance': [record.to_dict() for record in attendance_records]
+    }), 200 

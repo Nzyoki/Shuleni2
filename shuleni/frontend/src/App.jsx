@@ -18,18 +18,126 @@ import Reports from './pages/Reports';
 import Chat from './pages/Chat';
 import './App.css';
 
+console.log('App component imported');
+
 const theme = createTheme({
     palette: {
         primary: {
-            main: '#1976d2',
+            main: '#FFCBA4',
+            light: '#FFE5D4',
+            dark: '#FF9A6D',
+            contrastText: '#2D3748',
         },
         secondary: {
-            main: '#dc004e',
+            main: '#D2B48C',
+            light: '#E8D5B5',
+            dark: '#B89B6D',
+            contrastText: '#2D3748',
+        },
+        background: {
+            default: '#FFF8F3',
+            paper: '#FFFFFF',
+        },
+        text: {
+            primary: '#2D3748',
+            secondary: '#4A5568',
+        },
+    },
+    typography: {
+        fontFamily: '"Poppins", "Roboto", "Helvetica", "Arial", sans-serif',
+        h1: {
+            fontWeight: 600,
+            fontSize: '2.5rem',
+        },
+        h2: {
+            fontWeight: 600,
+            fontSize: '2rem',
+        },
+        h3: {
+            fontWeight: 600,
+            fontSize: '1.75rem',
+        },
+        h4: {
+            fontWeight: 600,
+            fontSize: '1.5rem',
+        },
+        h5: {
+            fontWeight: 600,
+            fontSize: '1.25rem',
+        },
+        h6: {
+            fontWeight: 600,
+            fontSize: '1rem',
+        },
+        button: {
+            textTransform: 'none',
+            fontWeight: 500,
+        },
+    },
+    components: {
+        MuiAppBar: {
+            styleOverrides: {
+                root: {
+                    backgroundColor: '#FFCBA4',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                },
+            },
+        },
+        MuiDrawer: {
+            styleOverrides: {
+                paper: {
+                    backgroundColor: '#FFF8F3',
+                    borderRight: '1px solid rgba(0,0,0,0.08)',
+                },
+            },
+        },
+        MuiButton: {
+            styleOverrides: {
+                root: {
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    boxShadow: 'none',
+                    '&:hover': {
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    },
+                },
+                contained: {
+                    '&:hover': {
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                    },
+                },
+            },
+        },
+        MuiCard: {
+            styleOverrides: {
+                root: {
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                    '&:hover': {
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                    },
+                },
+            },
+        },
+        MuiPaper: {
+            styleOverrides: {
+                root: {
+                    borderRadius: '12px',
+                },
+                elevation1: {
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                },
+                elevation2: {
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                },
+            },
         },
     },
 });
 
 function App() {
+    console.log('App component rendering');
+
     return (
         <ThemeProvider theme={theme}>
             <Router>

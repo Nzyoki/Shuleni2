@@ -1,9 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from ..models.class_ import Class
-from ..models.user import User
-from ..models.school import School
-from .. import db
+from ..models import Class, User, School, class_students, db
+from ..utils.permissions import check_permission
 
 bp = Blueprint('classes', __name__, url_prefix='/api/classes')
 
@@ -11,179 +9,246 @@ bp = Blueprint('classes', __name__, url_prefix='/api/classes')
 @jwt_required()
 def create_class():
     data = request.get_json()
-    
-    if not all(k in data for k in ['name', 'school_id', 'teacher_id']):
-        return jsonify({'error': 'Missing required fields'}), 400
-        
-    school = School.query.get_or_404(data['school_id'])
-    
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
     
-    if not current_user.has_permission('manage_classes'):
-        return jsonify({'error': 'Permission denied'}), 403
-        
+    # Validate required fields
+    if not data or not data.get('name') or not data.get('school_id'):
+        return jsonify({'error': 'Class name and school ID are required'}), 400
+    
+    # Check if school exists
+    school = School.query.get_or_404(data['school_id'])
+    
+    # Check permissions to create a class
+    has_perm = check_permission(current_user, ['create_classes', 'add_class', 'manage_classes'])
+    
+    if not has_perm:
+        return jsonify({'error': 'You do not have permission to create classes'}), 403
+    
+    # School admin can only create classes for their own school
     if current_user.role == 'school_admin' and current_user.school_id != school.id:
-        return jsonify({'error': 'Permission denied'}), 403
-        
-    class_ = Class(
+        return jsonify({'error': 'You can only create classes for your own school'}), 403
+    
+    # Create new class
+    new_class = Class(
         name=data['name'],
         description=data.get('description', ''),
         school_id=data['school_id'],
-        teacher_id=data['teacher_id']
+        teacher_id=data.get('teacher_id', current_user_id)
     )
     
-    db.session.add(class_)
+    db.session.add(new_class)
     db.session.commit()
     
-    return jsonify(class_.to_dict()), 201
+    return jsonify({
+        'message': 'Class created successfully',
+        'class': new_class.to_dict()
+    }), 201
 
 @bp.route('', methods=['GET'])
 @jwt_required()
 def get_classes():
     current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
+    user = User.query.get(current_user_id)
     
-    if current_user.role == 'super_admin':
+    if user.role == 'super_admin':
+        # Super admin can see all classes
         classes = Class.query.all()
-    elif current_user.role == 'school_admin':
-        classes = Class.query.filter_by(school_id=current_user.school_id).all()
-    elif current_user.role == 'teacher':
-        classes = Class.query.filter_by(school_id=current_user.school_id).all()
-    else:
-        classes = Class.query.filter_by(school_id=current_user.school_id).all()
+    elif user.role == 'school_admin':
+        # School admin can see all classes in their school
+        classes = Class.query.filter_by(school_id=user.school_id).all()
+    elif user.role == 'teacher':
+        # Teachers can see all classes in their school
+        classes = Class.query.filter_by(school_id=user.school_id).all()
+    else:  # student
+        # Students can see all classes in their school
+        classes = Class.query.filter_by(school_id=user.school_id).all()
         
-    result = []
-    for class_ in classes:
-        class_dict = class_.to_dict()
-        class_dict['enrolled'] = current_user in class_.students
-        result.append(class_dict)
+        # Highlight classes they're enrolled in by adding an "enrolled" flag
+        enrolled_class_ids = db.session.query(class_students.c.class_id).filter(
+            class_students.c.student_id == current_user_id
+        ).all()
+        enrolled_class_ids = [id[0] for id in enrolled_class_ids]
+        
+        # Return classes with enrollment information
+        return jsonify({
+            'classes': [{**class_.to_dict(), 'enrolled': class_.id in enrolled_class_ids} 
+                       for class_ in classes]
+        }), 200
     
-    return jsonify(result), 200
+    return jsonify({
+        'classes': [class_.to_dict() for class_ in classes]
+    }), 200
 
-@bp.route('/<int:id>', methods=['GET'])
+@bp.route('/<int:class_id>', methods=['GET'])
 @jwt_required()
-def get_class(id):
+def get_class(class_id):
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
-    class_ = Class.query.get_or_404(id)
+    class_ = Class.query.get_or_404(class_id)
     
-    if not (current_user.has_permission('view_classes') or 
-            current_user.id == class_.teacher_id or
-            current_user in class_.students):
-        return jsonify({'error': 'Permission denied'}), 403
-        
+    # Check if user has permission to view this class
+    if current_user.role == 'school_admin' and current_user.school_id != class_.school_id:
+        return jsonify({'error': 'You can only view classes from your own school'}), 403
+    
     return jsonify(class_.to_dict()), 200
 
-@bp.route('/<int:id>', methods=['PUT'])
+@bp.route('/<int:class_id>', methods=['PUT'])
 @jwt_required()
-def update_class(id):
+def update_class(class_id):
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
-    class_ = Class.query.get_or_404(id)
+    class_ = Class.query.get_or_404(class_id)
     
-    if not (current_user.has_permission('manage_classes') or 
-            current_user.id == class_.teacher_id):
-        return jsonify({'error': 'Permission denied'}), 403
-        
+    # Check if user has permission to update this class
+    is_teacher = class_.teacher_id == current_user_id
+    is_school_admin = current_user.role == 'school_admin' and current_user.school_id == class_.school_id
+    
+    if not (is_teacher or is_school_admin):
+        return jsonify({'error': 'Only the class teacher or school admin can update this class'}), 403
+    
     data = request.get_json()
     
-    if data.get('name'):
+    if 'name' in data:
         class_.name = data['name']
-    if data.get('description'):
+    if 'description' in data:
         class_.description = data['description']
-    if data.get('teacher_id'):
+    if 'teacher_id' in data and is_school_admin:
+        # Verify the new teacher is from the same school
         new_teacher = User.query.get_or_404(data['teacher_id'])
         if new_teacher.school_id != class_.school_id:
-            return jsonify({'error': 'Teacher must be from the same school'}), 400
+            return jsonify({'error': 'Teacher must belong to the same school as the class'}), 400
         class_.teacher_id = data['teacher_id']
-        
+    
     db.session.commit()
     
-    return jsonify(class_.to_dict()), 200
+    return jsonify({
+        'message': 'Class updated successfully',
+        'class': class_.to_dict()
+    }), 200
 
-@bp.route('/<int:id>', methods=['DELETE'])
+@bp.route('/<int:class_id>', methods=['DELETE'])
 @jwt_required()
-def delete_class(id):
+def delete_class(class_id):
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
-    class_ = Class.query.get_or_404(id)
+    class_ = Class.query.get_or_404(class_id)
     
-    if not current_user.has_permission('manage_classes'):
-        return jsonify({'error': 'Permission denied'}), 403
-        
+    # Check if user has permission to delete this class
+    is_teacher = class_.teacher_id == current_user_id
+    is_school_admin = current_user.role == 'school_admin' and current_user.school_id == class_.school_id
+    
+    if not (is_teacher or is_school_admin):
+        return jsonify({'error': 'Only the class teacher or school admin can delete this class'}), 403
+    
     db.session.delete(class_)
     db.session.commit()
     
-    return '', 204
+    return jsonify({'message': 'Class deleted successfully'}), 200
 
-@bp.route('/<int:id>/students', methods=['POST'])
+@bp.route('/<int:class_id>/students', methods=['POST'])
 @jwt_required()
-def add_student(id):
+def add_student(class_id):
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
-    class_ = Class.query.get_or_404(id)
+    class_ = Class.query.get_or_404(class_id)
     
-    if not (current_user.has_permission('manage_classes') or 
-            current_user.id == class_.teacher_id):
-        return jsonify({'error': 'Permission denied'}), 403
-        
+    # Check if user has permission to add students to this class
+    is_teacher = class_.teacher_id == current_user_id
+    is_school_admin = current_user.role == 'school_admin' and current_user.school_id == class_.school_id
+    
+    if not (is_teacher or is_school_admin):
+        return jsonify({'error': 'Only the class teacher or school admin can add students'}), 403
+    
     data = request.get_json()
-    if not data or 'student_id' not in data:
+    if not data or not data.get('student_id'):
         return jsonify({'error': 'Student ID is required'}), 400
-        
+    
     student = User.query.get_or_404(data['student_id'])
     
+    # Check if student belongs to the same school
     if student.school_id != class_.school_id:
-        return jsonify({'error': 'Student must be from the same school'}), 400
-        
+        return jsonify({'error': 'Student does not belong to the same school'}), 400
+    
+    # Add student to class
     if student not in class_.students:
         class_.students.append(student)
         db.session.commit()
     
-    return jsonify(class_.to_dict()), 200
+    return jsonify({
+        'message': 'Student added to class successfully',
+        'class': class_.to_dict()
+    }), 200
 
-@bp.route('/<int:id>/students/<int:student_id>', methods=['DELETE'])
+@bp.route('/<int:class_id>/students/<int:student_id>', methods=['DELETE'])
 @jwt_required()
-def remove_student(id, student_id):
+def remove_student(class_id, student_id):
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
-    class_ = Class.query.get_or_404(id)
+    class_ = Class.query.get_or_404(class_id)
     
-    if not (current_user.has_permission('manage_classes') or 
-            current_user.id == class_.teacher_id):
-        return jsonify({'error': 'Permission denied'}), 403
-        
+    # Check if user has permission to remove students from this class
+    is_teacher = class_.teacher_id == current_user_id
+    is_school_admin = current_user.role == 'school_admin' and current_user.school_id == class_.school_id
+    
+    if not (is_teacher or is_school_admin):
+        return jsonify({'error': 'Only the class teacher or school admin can remove students'}), 403
+    
     student = User.query.get_or_404(student_id)
     
+    # Remove student from class
     if student in class_.students:
         class_.students.remove(student)
         db.session.commit()
     
-    return '', 204
+    return jsonify({
+        'message': 'Student removed from class successfully',
+        'class': class_.to_dict()
+    }), 200 
 
-@bp.route('/enroll-all-students', methods=['POST'])
+@bp.route('/auto-enroll-students', methods=['POST'])
 @jwt_required()
-def enroll_all_students():
+def auto_enroll_students():
+    """
+    Testing utility endpoint to auto-enroll all students in all classes in their school.
+    This is helpful for quickly setting up test data.
+    """
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
     
-    if not current_user.role in ['super_admin', 'school_admin']:
-        return jsonify({'error': 'Permission denied'}), 403
-        
-    schools = School.query.all()
-    for school in schools:
-        students = User.query.filter_by(
-            school_id=school.id,
-            role='student'
-        ).all()
-        
-        classes = Class.query.filter_by(school_id=school.id).all()
-        
-        for student in students:
-            for class_ in classes:
-                if student not in class_.students:
-                    class_.students.append(student)
+    # Only super admin or school admin can use this utility
+    if current_user.role not in ['super_admin', 'school_admin']:
+        return jsonify({'error': 'Only administrators can use this utility'}), 403
     
-    db.session.commit()
-    return jsonify({'message': 'All students enrolled in their school classes'}), 200 
+    try:
+        # For each school
+        if current_user.role == 'super_admin':
+            schools = School.query.all()
+        else:
+            schools = [School.query.get(current_user.school_id)]
+        
+        enrollment_count = 0
+        
+        for school in schools:
+            # Get all students in this school
+            students = User.query.filter_by(school_id=school.id, role='student').all()
+            
+            # Get all classes in this school
+            classes = Class.query.filter_by(school_id=school.id).all()
+            
+            # Enroll each student in each class
+            for student in students:
+                for class_ in classes:
+                    if student not in class_.students:
+                        class_.students.append(student)
+                        enrollment_count += 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'Successfully enrolled students in classes. {enrollment_count} new enrollments created.'
+        }), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to auto-enroll students: {str(e)}'}), 500 

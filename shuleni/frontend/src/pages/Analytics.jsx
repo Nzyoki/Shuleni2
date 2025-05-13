@@ -254,9 +254,9 @@ const Analytics = () => {
         <Box sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Box>
-                <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-                    Analytics Dashboard
-                </Typography>
+                    <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+                        Analytics Dashboard
+                    </Typography>
                     <Typography color="text.secondary" variant="subtitle1">
                         Get insights into your school's performance
                     </Typography>
@@ -371,24 +371,24 @@ const Analytics = () => {
 
             {/* Tab 1: Performance Overview */}
             {tabValue === 0 && (
-            <Grid container spacing={3}>
+                <Grid container spacing={3}>
                     {/* Assessment Performance */}
-                <Grid item xs={12} md={8}>
+                    <Grid item xs={12} md={8}>
                         <Card elevation={3}>
                             <CardHeader
                                 title="Subject Performance Analysis"
                                 subheader="Average, highest and lowest scores by subject"
                             />
                             <Divider />
-                        <CardContent>
+                            <CardContent>
                                 <Box sx={{ height: 350 }}>
-                                <ResponsiveContainer width="100%" height="100%">
+                                    <ResponsiveContainer width="100%" height="100%">
                                         <ComposedChart data={assessmentPerformance}>
-                                        <CartesianGrid strokeDasharray="3 3" />
+                                            <CartesianGrid strokeDasharray="3 3" />
                                             <XAxis dataKey="subject" />
-                                        <YAxis domain={[0, 100]} />
-                                        <Tooltip />
-                                        <Legend />
+                                            <YAxis domain={[0, 100]} />
+                                            <Tooltip />
+                                            <Legend />
                                             <Bar dataKey="average" fill={theme.palette.primary.main} name="Average Score" />
                                             <Line type="monotone" dataKey="highest" stroke={theme.palette.success.main} name="Highest Score" />
                                             <Line type="monotone" dataKey="lowest" stroke={theme.palette.error.main} name="Lowest Score" />
@@ -427,11 +427,11 @@ const Analytics = () => {
                                             </Pie>
                                             <Tooltip formatter={(value) => [`${value} students`, 'Count']} />
                                         </PieChart>
-                                </ResponsiveContainer>
-                            </Box>
-                        </CardContent>
-                    </Card>
-                </Grid>
+                                    </ResponsiveContainer>
+                                </Box>
+                            </CardContent>
+                        </Card>
+                    </Grid>
 
                     {/* Skill Comparison */}
                     <Grid item xs={12}>
@@ -464,7 +464,7 @@ const Analytics = () => {
             {/* Tab 2: Students Overview */}
             {tabValue === 1 && (
                 <Grid container spacing={3}>
-                {/* User Distribution */}
+                    {/* User Distribution */}
                     <Grid item xs={12} md={6}>
                         <Card elevation={3}>
                             <CardHeader
@@ -472,31 +472,31 @@ const Analytics = () => {
                                 subheader="Distribution of users by role"
                             />
                             <Divider />
-                        <CardContent>
-                            <Box sx={{ height: 300 }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={userDistribution}
-                                            dataKey="value"
-                                            nameKey="name"
-                                            cx="50%"
-                                            cy="50%"
+                            <CardContent>
+                                <Box sx={{ height: 300 }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={userDistribution}
+                                                dataKey="value"
+                                                nameKey="name"
+                                                cx="50%"
+                                                cy="50%"
                                                 outerRadius={100}
                                                 label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                                        >
-                                            {userDistribution.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                        </Pie>
+                                            >
+                                                {userDistribution.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                ))}
+                                            </Pie>
                                             <Tooltip formatter={(value) => [`${value} users`, 'Count']} />
-                                        <Legend />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </Box>
-                        </CardContent>
-                    </Card>
-                </Grid>
+                                            <Legend />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </Box>
+                            </CardContent>
+                        </Card>
+                    </Grid>
 
                     {/* Gender Distribution */}
                     <Grid item xs={12} md={6}>
@@ -506,16 +506,16 @@ const Analytics = () => {
                                 subheader="Students by gender"
                             />
                             <Divider />
-                        <CardContent>
-                            <Box sx={{ height: 300 }}>
-                                <ResponsiveContainer width="100%" height="100%">
+                            <CardContent>
+                                <Box sx={{ height: 300 }}>
+                                    <ResponsiveContainer width="100%" height="100%">
                                         <BarChart data={genderDistribution}>
-                                        <CartesianGrid strokeDasharray="3 3" />
+                                            <CartesianGrid strokeDasharray="3 3" />
                                             <XAxis dataKey="name" />
                                             <YAxis />
                                             <Tooltip formatter={(value) => [`${value} students`, 'Count']} />
-                                        <Legend />
-                                        <Bar
+                                            <Legend />
+                                            <Bar
                                                 dataKey="value"
                                                 name="Students"
                                                 fill={theme.palette.primary.main}
@@ -531,13 +531,13 @@ const Analytics = () => {
                                                         </g>
                                                     );
                                                 }}
-                                        />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </Box>
-                        </CardContent>
-                    </Card>
-                </Grid>
+                                            />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </Box>
+                            </CardContent>
+                        </Card>
+                    </Grid>
 
                     {/* Student Attendance */}
                     <Grid item xs={12}>
@@ -663,7 +663,7 @@ const Analytics = () => {
                             </CardContent>
                         </Card>
                     </Grid>
-            </Grid>
+                </Grid>
             )}
         </Box>
     );

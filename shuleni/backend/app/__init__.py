@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
-socketio = SocketIO(cors_allowed_origins="*")
+socketio = SocketIO()
 
 def create_app(test_config=None):
     # Create and configure the app
@@ -24,9 +24,8 @@ def create_app(test_config=None):
             SECRET_KEY='dev',
             SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(app.instance_path, 'shuleni.db'),
             SQLALCHEMY_TRACK_MODIFICATIONS=False,
-            JWT_SECRET_KEY='dev-jwt-secret',
-            JWT_ACCESS_TOKEN_EXPIRES=timedelta(days=1),
-            CORS_HEADERS='Content-Type'
+            JWT_SECRET_KEY='super-secret',  # Change this in production!
+            MAX_CONTENT_LENGTH=16 * 1024 * 1024,  # 16MB max file size
         )
     else:
         # Load the test config if passed in
@@ -41,27 +40,27 @@ def create_app(test_config=None):
         os.makedirs(uploads_dir, exist_ok=True)
     except OSError:
         pass
-
-    # Initialize Flask extensions
-    CORS(app)
+    
+    # Initialize extensions with the app
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
-    socketio.init_app(app)
+    
+    # Enable CORS
+    CORS(app)
 
-    # Register blueprints
-    from .routes import auth, schools, users, classes, assessments, attendance, resources, chat
+    # Import and register blueprints
+    from .routes import auth, users, schools, classes, assessments, resources
+    
     app.register_blueprint(auth.bp)
-    app.register_blueprint(schools.bp)
     app.register_blueprint(users.bp)
+    app.register_blueprint(schools.bp)
     app.register_blueprint(classes.bp)
     app.register_blueprint(assessments.bp)
-    app.register_blueprint(attendance.bp)
     app.register_blueprint(resources.bp)
-    app.register_blueprint(chat.bp)
 
     @app.route('/health')
     def health():
         return {'status': 'ok'}
-
+    
     return app 

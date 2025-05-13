@@ -271,7 +271,7 @@ const AssessmentManagement = () => {
         } catch (err) {
             setError(`Failed to delete assessment: ${err.message || 'Unknown error'}`);
         } finally {
-            setLoading(false);
+        setLoading(false);
         }
     };
 
@@ -299,8 +299,8 @@ const AssessmentManagement = () => {
                                 onClick={handleOpenCreateDialog}
                                 sx={{ mr: 1 }}
                                 disabled={classes.length === 0}
-                            >
-                                Create Assessment
+                >
+                    Create Assessment
                             </Button>
                         )}
                         <IconButton
@@ -313,7 +313,7 @@ const AssessmentManagement = () => {
                     </Box>
                 </Box>
 
-                {error && (
+            {error && (
                     <Alert severity="error" sx={{ mb: 3 }}>
                         {error}
                     </Alert>
@@ -374,8 +374,8 @@ const AssessmentManagement = () => {
                                         No assessments found for this class
                                     </TableCell>
                                 </TableRow>
-                            ) : (
-                                assessments.map((assessment) => (
+                        ) : (
+                            assessments.map((assessment) => (
                                     <TableRow key={assessment.id}>
                                         <TableCell>
                                             <Typography variant="body1" fontWeight="medium">

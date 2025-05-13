@@ -252,7 +252,7 @@ const ClassManagement = () => {
                     <Alert severity="error" sx={{ mb: 3 }}>
                         {error}
                     </Alert>
-                )}
+            )}
 
                 {success && (
                     <Alert severity="success" sx={{ mb: 3 }}>
@@ -481,7 +481,7 @@ const ClassManagement = () => {
                         variant="contained"
                         color="primary"
                         disabled={loading || !formData.name}
-                    >
+                                        >
                         {loading ? <CircularProgress size={24} /> : 'Update'}
                     </Button>
                 </DialogActions>
