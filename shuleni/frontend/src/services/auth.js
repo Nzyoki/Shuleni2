@@ -110,15 +110,57 @@ export const hasPermission = (user, permission) => {
             'view_class_reports'
         ],
         school_admin: [
+            // School Management
             'manage_school',
             'manage_teachers',
             'manage_students',
+            'manage_school_students',
             'manage_classes',
+            'manage_school_classes',
             'manage_resources',
             'manage_assessments',
             'view_attendance',
+            'manage_attendance',
+            'take_attendance',
             'monitor_chat',
-            'view_school_reports'
+            'view_school_reports',
+
+            // User Management for their school
+            'view_users',
+            'manage_users',
+            'create_users',
+            'edit_users',
+            'delete_users',
+
+            // Analytics specifically for their school
+            'view_analytics',
+            'view_school_analytics',
+            'view_reports',
+            'view_school_reports',
+
+            // Resource Management
+            'manage_resources',
+            'view_resources',
+            'create_resources',
+            'edit_resources',
+            'delete_resources',
+
+            // Assessment Management
+            'manage_assessments',
+            'view_assessments',
+            'create_assessments',
+            'edit_assessments',
+            'grade_assessments',
+
+            // Class Management
+            'view_class_students',
+            'manage_class_students',
+            'view_class_reports',
+            'manage_class_assessments',
+
+            // Communication within school
+            'participate_chat',
+            'send_notifications'
         ],
         teacher: [
             'manage_class',

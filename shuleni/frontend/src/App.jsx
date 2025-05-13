@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import SchoolManagement from './pages/SchoolManagement';
+import UserManagement from './pages/UserManagement';
 import ClassManagement from './pages/ClassManagement';
 import StudentManagement from './pages/StudentManagement';
 import AssessmentManagement from './pages/AssessmentManagement';
@@ -51,47 +52,47 @@ function App() {
                                 </ProtectedRoute>
                             } />
                             <Route path="users" element={
-                                <ProtectedRoute requiredPermissions={["manage_users", "manage_school_users"]}>
-                                    <div>Users Management (Stub)</div>
+                                <ProtectedRoute requiredPermissions={["manage_users", "manage_all_users"]}>
+                                    <UserManagement />
                                 </ProtectedRoute>
                             } />
                             <Route path="analytics" element={
-                                <ProtectedRoute requiredPermissions={["view_analytics", "view_school_reports"]}>
+                                <ProtectedRoute requiredPermissions={["view_analytics", "view_school_reports", "view_school_analytics"]}>
                                     <Reports />
                                 </ProtectedRoute>
                             } />
                             <Route path="students" element={
-                                <ProtectedRoute requiredPermissions={["manage_school_students"]}>
+                                <ProtectedRoute requiredPermissions={["manage_students", "manage_school_students"]}>
                                     <StudentManagement />
                                 </ProtectedRoute>
                             } />
                             <Route path="classes" element={
-                                <ProtectedRoute requiredPermissions={["manage_school_classes", "manage_class_students", "view_class_students"]}>
+                                <ProtectedRoute requiredPermissions={["manage_classes", "manage_school_classes", "manage_class_students", "view_class_students"]}>
                                     <ClassManagement />
                                 </ProtectedRoute>
                             } />
                             <Route path="resources" element={
-                                <ProtectedRoute requiredPermissions={["manage_resources", "view_resources"]}>
+                                <ProtectedRoute requiredPermissions={["manage_resources", "view_resources", "create_resources", "edit_resources"]}>
                                     <div>Resources Management (Stub)</div>
                                 </ProtectedRoute>
                             } />
                             <Route path="assessments" element={
-                                <ProtectedRoute requiredPermissions={["manage_class_assessments", "view_own_assessments"]}>
+                                <ProtectedRoute requiredPermissions={["manage_assessments", "view_assessments", "create_assessments", "edit_assessments", "manage_class_assessments", "view_own_assessments"]}>
                                     <AssessmentManagement />
                                 </ProtectedRoute>
                             } />
                             <Route path="attendance" element={
-                                <ProtectedRoute requiredPermissions={["manage_attendance", "view_attendance"]}>
+                                <ProtectedRoute requiredPermissions={["manage_attendance", "view_attendance", "take_attendance"]}>
                                     <AttendanceManagement />
                                 </ProtectedRoute>
                             } />
                             <Route path="chat" element={
-                                <ProtectedRoute requiredPermissions={["participate_chat"]}>
+                                <ProtectedRoute requiredPermissions={["participate_chat", "monitor_chat"]}>
                                     <div>Chat (Stub)</div>
                                 </ProtectedRoute>
                             } />
                             <Route path="reports" element={
-                                <ProtectedRoute requiredPermissions={['view_reports', 'view_school_reports', 'view_class_reports']}>
+                                <ProtectedRoute requiredPermissions={['view_reports', 'view_school_reports', 'view_class_reports', 'view_analytics', 'view_school_analytics']}>
                                     <Reports />
                                 </ProtectedRoute>
                             } />

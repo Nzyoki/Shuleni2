@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import {
     Grid,
     Paper,
@@ -12,6 +14,8 @@ import {
     ListItemText,
     ListItemIcon,
     Divider,
+    CircularProgress,
+    Button,
 } from '@mui/material';
 import {
     School as SchoolIcon,
@@ -21,9 +25,12 @@ import {
     Event as EventIcon,
 } from '@mui/icons-material';
 import { getSchools } from '../services/schools';
+import { getClasses } from '../services/classes';
+import { getStudents } from '../services/students';
+import { getAssessments } from '../services/assessments';
 
-const StatCard = ({ title, value, icon }) => (
-    <Card>
+const StatCard = ({ title, value, icon, isLoading }) => (
+    <Card sx={{ height: '100%' }}>
         <CardContent>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 {icon}
@@ -31,14 +38,22 @@ const StatCard = ({ title, value, icon }) => (
                     {title}
                 </Typography>
             </Box>
-            <Typography variant="h4" component="div">
-                {value}
-            </Typography>
+            {isLoading ? (
+                <Box display="flex" justifyContent="center">
+                    <CircularProgress size={24} />
+                </Box>
+            ) : (
+                <Typography variant="h4" component="div">
+                    {value}
+                </Typography>
+            )}
         </CardContent>
     </Card>
 );
 
 const Dashboard = () => {
+    const { user } = useAuth();
+    const navigate = useNavigate();
     const [stats, setStats] = useState({
         schools: 0,
         classes: 0,
@@ -46,37 +61,77 @@ const Dashboard = () => {
         assessments: 0,
     });
     const [recentActivity, setRecentActivity] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState({
+        schools: true,
+        classes: true,
+        students: true,
+        assessments: true,
+    });
 
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchStats = async () => {
+            // Fetch schools data
             try {
                 const schoolsData = await getSchools();
                 setStats(prev => ({
                     ...prev,
-                    schools: schoolsData.schools?.length || 0
+                    schools: schoolsData.length || 0
                 }));
-                // TODO: Fetch other stats when their APIs are ready
             } catch (error) {
-                console.error('Error fetching dashboard data:', error);
+                console.error('Error fetching schools:', error);
             } finally {
-                setLoading(false);
+                setLoading(prev => ({ ...prev, schools: false }));
+            }
+
+            // Fetch classes data
+            try {
+                const classesData = await getClasses();
+                setStats(prev => ({
+                    ...prev,
+                    classes: classesData.length || 0
+                }));
+            } catch (error) {
+                console.error('Error fetching classes:', error);
+            } finally {
+                setLoading(prev => ({ ...prev, classes: false }));
+            }
+
+            // Fetch students data
+            try {
+                const studentsData = await getStudents();
+                setStats(prev => ({
+                    ...prev,
+                    students: studentsData.length || 0
+                }));
+            } catch (error) {
+                console.error('Error fetching students:', error);
+            } finally {
+                setLoading(prev => ({ ...prev, students: false }));
+            }
+
+            // Fetch assessments data
+            try {
+                const assessmentsData = await getAssessments();
+                setStats(prev => ({
+                    ...prev,
+                    assessments: assessmentsData.length || 0
+                }));
+            } catch (error) {
+                console.error('Error fetching assessments:', error);
+            } finally {
+                setLoading(prev => ({ ...prev, assessments: false }));
             }
         };
 
-        fetchData();
+        fetchStats();
     }, []);
 
-    if (loading) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-                <Typography>Loading...</Typography>
-            </Box>
-        );
-    }
+    const handleNavigate = (path) => {
+        navigate(path);
+    };
 
     return (
-        <Box>
+        <Box sx={{ p: 3 }}>
             <Typography variant="h4" component="h1" gutterBottom>
                 Dashboard
             </Typography>
@@ -86,6 +141,7 @@ const Dashboard = () => {
                         title="Schools"
                         value={stats.schools}
                         icon={<SchoolIcon color="primary" />}
+                        isLoading={loading.schools}
                     />
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
@@ -93,6 +149,7 @@ const Dashboard = () => {
                         title="Classes"
                         value={stats.classes}
                         icon={<ClassIcon color="primary" />}
+                        isLoading={loading.classes}
                     />
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
@@ -100,6 +157,7 @@ const Dashboard = () => {
                         title="Students"
                         value={stats.students}
                         icon={<PeopleIcon color="primary" />}
+                        isLoading={loading.students}
                     />
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
@@ -107,10 +165,11 @@ const Dashboard = () => {
                         title="Assessments"
                         value={stats.assessments}
                         icon={<AssignmentIcon color="primary" />}
+                        isLoading={loading.assessments}
                     />
                 </Grid>
                 <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 2 }}>
+                    <Paper sx={{ p: 2, height: '100%' }}>
                         <Typography variant="h6" gutterBottom>
                             Recent Activity
                         </Typography>
@@ -139,30 +198,53 @@ const Dashboard = () => {
                     </Paper>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 2 }}>
+                    <Paper sx={{ p: 2, height: '100%' }}>
                         <Typography variant="h6" gutterBottom>
                             Quick Actions
                         </Typography>
                         <List>
-                            <ListItem button>
+                            <ListItem
+                                button
+                                onClick={() => handleNavigate('/schools')}
+                                sx={{ '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' } }}
+                            >
                                 <ListItemIcon>
                                     <SchoolIcon />
                                 </ListItemIcon>
-                                <ListItemText primary="Add New School" />
+                                <ListItemText primary="Manage Schools" />
                             </ListItem>
                             <Divider />
-                            <ListItem button>
+                            <ListItem
+                                button
+                                onClick={() => handleNavigate('/classes')}
+                                sx={{ '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' } }}
+                            >
                                 <ListItemIcon>
                                     <ClassIcon />
                                 </ListItemIcon>
-                                <ListItemText primary="Create New Class" />
+                                <ListItemText primary="Manage Classes" />
                             </ListItem>
                             <Divider />
-                            <ListItem button>
+                            <ListItem
+                                button
+                                onClick={() => handleNavigate('/users')}
+                                sx={{ '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' } }}
+                            >
+                                <ListItemIcon>
+                                    <PeopleIcon />
+                                </ListItemIcon>
+                                <ListItemText primary="Manage Users" />
+                            </ListItem>
+                            <Divider />
+                            <ListItem
+                                button
+                                onClick={() => handleNavigate('/assessments')}
+                                sx={{ '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' } }}
+                            >
                                 <ListItemIcon>
                                     <AssignmentIcon />
                                 </ListItemIcon>
-                                <ListItemText primary="Create Assessment" />
+                                <ListItemText primary="Manage Assessments" />
                             </ListItem>
                         </List>
                     </Paper>

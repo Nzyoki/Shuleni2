@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 from ..models import Assessment, AssessmentSubmission, Class, User, db
+from ..utils.permissions import check_permission
 
 bp = Blueprint('assessments', __name__, url_prefix='/api/assessments')
 
@@ -9,17 +10,18 @@ bp = Blueprint('assessments', __name__, url_prefix='/api/assessments')
 @jwt_required()
 def create_assessment(class_id):
     current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
     class_ = Class.query.get_or_404(class_id)
     
-    # Check if user is the teacher of this class
-    if class_.teacher_id != current_user_id:
-        return jsonify({'error': 'Only the class teacher can create assessments'}), 403
+    # Allow teacher of the class or school admin of the school to create assessments
+    if class_.teacher_id != current_user_id and not (current_user.role == 'school_admin' and class_.school_id == current_user.school_id):
+        return jsonify({'error': 'Only the class teacher or school admin can create assessments'}), 403
     
     data = request.get_json()
     if not data or not data.get('title') or not data.get('type') or not data.get('total_points'):
         return jsonify({'error': 'Title, type, and total points are required'}), 400
     
-    # Create assessment
+    
     assessment = Assessment(
         class_id=class_id,
         title=data['title'],
@@ -42,12 +44,18 @@ def create_assessment(class_id):
 @jwt_required()
 def get_class_assessments(class_id):
     current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
     class_ = Class.query.get_or_404(class_id)
     
-    # Check if user is the teacher or a student in the class
+    # Allow access to:
+    # 1. Teacher of the class
+    # 2. Students enrolled in the class
+    # 3. School admin of the school
     if class_.teacher_id != current_user_id:
-        user = User.query.get(current_user_id)
-        if user not in class_.students:
+        is_student = current_user.role == 'student' and current_user in class_.students
+        is_school_admin = current_user.role == 'school_admin' and current_user.school_id == class_.school_id
+        
+        if not (is_student or is_school_admin):
             return jsonify({'error': 'Unauthorized access'}), 403
     
     assessments = Assessment.query.filter_by(class_id=class_id).order_by(Assessment.created_at.desc()).all()
@@ -59,14 +67,17 @@ def get_class_assessments(class_id):
 @bp.route('/<int:assessment_id>', methods=['GET'])
 @jwt_required()
 def get_assessment(assessment_id):
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
     assessment = Assessment.query.get_or_404(assessment_id)
     class_ = Class.query.get(assessment.class_id)
     
-    # Check if user is the teacher or a student in the class
-    current_user_id = get_jwt_identity()
+    # Check if user is the teacher, a student in the class, or a school admin
     if class_.teacher_id != current_user_id:
-        user = User.query.get(current_user_id)
-        if user not in class_.students:
+        is_student = current_user.role == 'student' and current_user in class_.students
+        is_school_admin = current_user.role == 'school_admin' and current_user.school_id == class_.school_id
+        
+        if not (is_student or is_school_admin):
             return jsonify({'error': 'Unauthorized access'}), 403
     
     return jsonify(assessment.to_dict()), 200
@@ -75,11 +86,16 @@ def get_assessment(assessment_id):
 @jwt_required()
 def update_assessment(assessment_id):
     current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
     assessment = Assessment.query.get_or_404(assessment_id)
+    class_ = Class.query.get(assessment.class_id)
     
-    # Check if user is the creator of the assessment
-    if assessment.created_by != current_user_id:
-        return jsonify({'error': 'Only the assessment creator can update it'}), 403
+    # Allow the assessment creator or school admin to update assessments
+    is_creator = assessment.created_by == current_user_id
+    is_school_admin = current_user.role == 'school_admin' and current_user.school_id == class_.school_id
+    
+    if not (is_creator or is_school_admin):
+        return jsonify({'error': 'Only the assessment creator or school admin can update it'}), 403
     
     data = request.get_json()
     
@@ -105,11 +121,16 @@ def update_assessment(assessment_id):
 @jwt_required()
 def delete_assessment(assessment_id):
     current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
     assessment = Assessment.query.get_or_404(assessment_id)
+    class_ = Class.query.get(assessment.class_id)
     
-    # Check if user is the creator of the assessment
-    if assessment.created_by != current_user_id:
-        return jsonify({'error': 'Only the assessment creator can delete it'}), 403
+    # Allow the assessment creator or school admin to delete assessments
+    is_creator = assessment.created_by == current_user_id
+    is_school_admin = current_user.role == 'school_admin' and current_user.school_id == class_.school_id
+    
+    if not (is_creator or is_school_admin):
+        return jsonify({'error': 'Only the assessment creator or school admin can delete it'}), 403
     
     db.session.delete(assessment)
     db.session.commit()
@@ -123,7 +144,6 @@ def submit_assessment(assessment_id):
     assessment = Assessment.query.get_or_404(assessment_id)
     class_ = Class.query.get(assessment.class_id)
     
-    # Check if user is a student in the class
     user = User.query.get(current_user_id)
     if user not in class_.students:
         return jsonify({'error': 'Only enrolled students can submit assessments'}), 403
@@ -132,7 +152,6 @@ def submit_assessment(assessment_id):
     if not data or not data.get('submission'):
         return jsonify({'error': 'Submission content is required'}), 400
     
-    # Check if submission already exists
     submission = AssessmentSubmission.query.filter_by(
         assessment_id=assessment_id,
         student_id=current_user_id
@@ -162,11 +181,16 @@ def submit_assessment(assessment_id):
 @jwt_required()
 def grade_submission(assessment_id, submission_id):
     current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
     assessment = Assessment.query.get_or_404(assessment_id)
+    class_ = Class.query.get(assessment.class_id)
     
-    # Check if user is the teacher of the class
-    if assessment.created_by != current_user_id:
-        return jsonify({'error': 'Only the assessment creator can grade submissions'}), 403
+    # Allow the assessment creator or school admin to grade submissions
+    is_creator = assessment.created_by == current_user_id
+    is_school_admin = current_user.role == 'school_admin' and current_user.school_id == class_.school_id
+    
+    if not (is_creator or is_school_admin):
+        return jsonify({'error': 'Only the assessment creator or school admin can grade submissions'}), 403
     
     submission = AssessmentSubmission.query.get_or_404(submission_id)
     if submission.assessment_id != assessment_id:
@@ -193,11 +217,16 @@ def grade_submission(assessment_id, submission_id):
 @jwt_required()
 def get_submissions(assessment_id):
     current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
     assessment = Assessment.query.get_or_404(assessment_id)
+    class_ = Class.query.get(assessment.class_id)
     
-    # Check if user is the teacher of the class
-    if assessment.created_by != current_user_id:
-        return jsonify({'error': 'Only the assessment creator can view submissions'}), 403
+    # Allow the assessment creator or school admin to view submissions
+    is_creator = assessment.created_by == current_user_id
+    is_school_admin = current_user.role == 'school_admin' and current_user.school_id == class_.school_id
+    
+    if not (is_creator or is_school_admin):
+        return jsonify({'error': 'Only the assessment creator or school admin can view submissions'}), 403
     
     submissions = AssessmentSubmission.query.filter_by(assessment_id=assessment_id).all()
     
