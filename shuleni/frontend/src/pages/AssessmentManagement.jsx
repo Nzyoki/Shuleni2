@@ -6,7 +6,8 @@ import {
     createAssessment,
     updateAssessment,
     deleteAssessment,
-    getAssessmentSubmissions
+    getAssessmentSubmissions,
+    submitAssessment
 } from '../services/assessments';
 import {
     Container,
@@ -45,7 +46,8 @@ import {
     Delete as DeleteIcon,
     List as ListIcon,
     Refresh as RefreshIcon,
-    Assignment as AssignmentIcon
+    Assignment as AssignmentIcon,
+    AssignmentTurnedIn as AssignmentTurnedInIcon
 } from '@mui/icons-material';
 import AssessmentSubmission from '../components/AssessmentSubmission';
 
@@ -74,7 +76,8 @@ const AssessmentManagement = () => {
         description: '',
         type: 'quiz',
         total_points: 100,
-        due_date: new Date().toISOString().split('T')[0]
+        due_date: new Date().toISOString().split('T')[0],
+        class_id: ''
     });
 
     const fetchData = useCallback(async () => {
@@ -141,7 +144,8 @@ const AssessmentManagement = () => {
             description: '',
             type: 'quiz',
             total_points: 100,
-            due_date: new Date().toISOString().split('T')[0]
+            due_date: new Date().toISOString().split('T')[0],
+            class_id: ''
         });
         setOpenCreateDialog(true);
     };
@@ -153,7 +157,8 @@ const AssessmentManagement = () => {
             description: assessment.description || '',
             type: assessment.type,
             total_points: assessment.total_points,
-            due_date: assessment.due_date ? new Date(assessment.due_date).toISOString().split('T')[0] : ''
+            due_date: assessment.due_date ? new Date(assessment.due_date).toISOString().split('T')[0] : '',
+            class_id: assessment.class_id
         });
         setOpenEditDialog(true);
     };
@@ -210,9 +215,12 @@ const AssessmentManagement = () => {
 
         setLoading(true);
         try {
-            const data = { ...formData };
+            const data = {
+                ...formData,
+                class_id: selectedClass
+            };
 
-            await createAssessment(selectedClass, data);
+            await createAssessment(data);
             setOpenCreateDialog(false);
             setSuccess('Assessment created successfully');
 
@@ -271,8 +279,19 @@ const AssessmentManagement = () => {
         } catch (err) {
             setError(`Failed to delete assessment: ${err.message || 'Unknown error'}`);
         } finally {
-        setLoading(false);
+            setLoading(false);
         }
+    };
+
+    const handleSubmitAssessment = async (assessment) => {
+        setCurrentAssessmentForSubmission(assessment);
+        setOpenSubmitDialog(true);
+    };
+
+    const handleSubmitSuccess = () => {
+        setSuccess('Assessment submitted successfully');
+        fetchData();
+        setOpenSubmitDialog(false);
     };
 
     if (loading && assessments.length === 0 && classes.length === 0) {
@@ -299,8 +318,8 @@ const AssessmentManagement = () => {
                                 onClick={handleOpenCreateDialog}
                                 sx={{ mr: 1 }}
                                 disabled={classes.length === 0}
-                >
-                    Create Assessment
+                            >
+                                Create Assessment
                             </Button>
                         )}
                         <IconButton
@@ -313,7 +332,7 @@ const AssessmentManagement = () => {
                     </Box>
                 </Box>
 
-            {error && (
+                {error && (
                     <Alert severity="error" sx={{ mb: 3 }}>
                         {error}
                     </Alert>
@@ -358,6 +377,7 @@ const AssessmentManagement = () => {
                                 <TableCell>Type</TableCell>
                                 <TableCell>Points</TableCell>
                                 <TableCell>Due Date</TableCell>
+                                <TableCell>Class</TableCell>
                                 <TableCell>Actions</TableCell>
                             </TableRow>
                         </TableHead>
@@ -374,8 +394,8 @@ const AssessmentManagement = () => {
                                         No assessments found for this class
                                     </TableCell>
                                 </TableRow>
-                        ) : (
-                            assessments.map((assessment) => (
+                            ) : (
+                                assessments.map((assessment) => (
                                     <TableRow key={assessment.id}>
                                         <TableCell>
                                             <Typography variant="body1" fontWeight="medium">
@@ -402,6 +422,9 @@ const AssessmentManagement = () => {
                                                 new Date(assessment.due_date).toLocaleDateString() :
                                                 'No due date'
                                             }
+                                        </TableCell>
+                                        <TableCell>
+                                            {classes.find(c => c.id === assessment.class_id)?.name || 'Unknown'}
                                         </TableCell>
                                         <TableCell>
                                             <Box display="flex">
@@ -439,9 +462,9 @@ const AssessmentManagement = () => {
                                                     <Tooltip title="Submit Assessment">
                                                         <IconButton
                                                             color="primary"
-                                                            onClick={() => handleOpenSubmitDialog(assessment)}
+                                                            onClick={() => handleSubmitAssessment(assessment)}
                                                         >
-                                                            <AssignmentIcon />
+                                                            <AssignmentTurnedInIcon />
                                                         </IconButton>
                                                     </Tooltip>
                                                 )}
@@ -532,6 +555,25 @@ const AssessmentManagement = () => {
                                     sx={{ width: '100%' }}
                                 />
                             </LocalizationProvider>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <FormControl fullWidth margin="normal">
+                                <InputLabel id="class-label">Class</InputLabel>
+                                <Select
+                                    labelId="class-label"
+                                    id="class_id"
+                                    name="class_id"
+                                    value={formData.class_id}
+                                    label="Class"
+                                    onChange={handleFormChange}
+                                >
+                                    {classes.map((cls) => (
+                                        <MenuItem key={cls.id} value={cls.id}>
+                                            {cls.name}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
                         </Grid>
                     </Grid>
                 </DialogContent>
@@ -624,6 +666,25 @@ const AssessmentManagement = () => {
                                     }
                                 />
                             </LocalizationProvider>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <FormControl fullWidth margin="normal">
+                                <InputLabel id="class-label">Class</InputLabel>
+                                <Select
+                                    labelId="class-label"
+                                    id="class_id"
+                                    name="class_id"
+                                    value={formData.class_id}
+                                    label="Class"
+                                    onChange={handleFormChange}
+                                >
+                                    {classes.map((cls) => (
+                                        <MenuItem key={cls.id} value={cls.id}>
+                                            {cls.name}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
                         </Grid>
                     </Grid>
                 </DialogContent>
@@ -726,10 +787,7 @@ const AssessmentManagement = () => {
                 open={openSubmitDialog}
                 onClose={() => setOpenSubmitDialog(false)}
                 assessment={currentAssessmentForSubmission}
-                onSubmitSuccess={() => {
-                    setSuccess('Assessment submitted successfully');
-                    setTimeout(() => setSuccess(''), 3000);
-                }}
+                onSubmitSuccess={handleSubmitSuccess}
             />
         </Container>
     );

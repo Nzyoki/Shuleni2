@@ -1,26 +1,22 @@
 import api from './api';
 
-export const getAssessmentsByClass = async (classId) => {
+export const getAssessments = async () => {
     try {
-        console.log('Fetching assessments for class:', classId);
-        const response = await api.get(`/api/assessments/class/${classId}`);
-        console.log('Assessment response:', response.data);
-        return response.data.assessments || [];
+        const response = await api.get('/api/assessments');
+        return response.data.assessments;
     } catch (error) {
         console.error('Error fetching assessments:', error);
         throw error.response?.data?.error || error.message || 'Failed to fetch assessments';
     }
 };
 
-export const getAssessments = async () => {
+export const getAssessmentsByClass = async (classId) => {
     try {
-        // Get all assessments (filtered by user role on the server)
-        const response = await api.get('/api/assessments');
-        return response.data.assessments || [];
+        const response = await api.get(`/api/assessments/class/${classId}`);
+        return response.data.assessments;
     } catch (error) {
-        console.error('Error fetching all assessments:', error);
-        // Return empty array instead of throwing to avoid breaking dashboard
-        return [];
+        console.error('Error fetching class assessments:', error);
+        throw error.response?.data?.error || error.message || 'Failed to fetch class assessments';
     }
 };
 
@@ -34,9 +30,9 @@ export const getAssessment = async (assessmentId) => {
     }
 };
 
-export const createAssessment = async (classId, assessmentData) => {
+export const createAssessment = async (data) => {
     try {
-        const response = await api.post(`/api/assessments/class/${classId}`, assessmentData);
+        const response = await api.post(`/api/assessments/class/${data.class_id}`, data);
         return response.data.assessment;
     } catch (error) {
         console.error('Error creating assessment:', error);
@@ -44,9 +40,9 @@ export const createAssessment = async (classId, assessmentData) => {
     }
 };
 
-export const updateAssessment = async (assessmentId, assessmentData) => {
+export const updateAssessment = async (id, data) => {
     try {
-        const response = await api.put(`/api/assessments/${assessmentId}`, assessmentData);
+        const response = await api.put(`/api/assessments/${id}`, data);
         return response.data.assessment;
     } catch (error) {
         console.error('Error updating assessment:', error);
@@ -54,19 +50,18 @@ export const updateAssessment = async (assessmentId, assessmentData) => {
     }
 };
 
-export const deleteAssessment = async (assessmentId) => {
+export const deleteAssessment = async (id) => {
     try {
-        const response = await api.delete(`/api/assessments/${assessmentId}`);
-        return response.data;
+        await api.delete(`/api/assessments/${id}`);
     } catch (error) {
         console.error('Error deleting assessment:', error);
         throw error.response?.data?.error || error.message || 'Failed to delete assessment';
     }
 };
 
-export const submitAssessment = async (assessmentId, submissionData) => {
+export const submitAssessment = async (id, data) => {
     try {
-        const response = await api.post(`/api/assessments/${assessmentId}/submit`, submissionData);
+        const response = await api.post(`/api/assessments/${id}/submit`, data);
         return response.data;
     } catch (error) {
         console.error('Error submitting assessment:', error);
@@ -74,19 +69,19 @@ export const submitAssessment = async (assessmentId, submissionData) => {
     }
 };
 
-export const getAssessmentSubmissions = async (assessmentId) => {
+export const getAssessmentSubmissions = async (id) => {
     try {
-        const response = await api.get(`/api/assessments/${assessmentId}/submissions`);
-        return response.data.submissions || [];
+        const response = await api.get(`/api/assessments/${id}/submissions`);
+        return response.data.submissions;
     } catch (error) {
         console.error('Error fetching submissions:', error);
         throw error.response?.data?.error || error.message || 'Failed to fetch submissions';
     }
 };
 
-export const gradeSubmission = async (assessmentId, submissionId, gradingData) => {
+export const gradeSubmission = async (assessmentId, submissionId, data) => {
     try {
-        const response = await api.post(`/api/assessments/${assessmentId}/grade/${submissionId}`, gradingData);
+        const response = await api.post(`/api/assessments/${assessmentId}/grade/${submissionId}`, data);
         return response.data.submission;
     } catch (error) {
         console.error('Error grading submission:', error);

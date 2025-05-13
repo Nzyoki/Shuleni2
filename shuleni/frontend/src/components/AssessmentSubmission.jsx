@@ -17,6 +17,11 @@ const AssessmentSubmission = ({ open, onClose, assessment, onSubmitSuccess }) =>
     const [submission, setSubmission] = useState('');
 
     const handleSubmit = async () => {
+        if (!assessment) {
+            setError('No assessment selected');
+            return;
+        }
+
         if (!submission.trim()) {
             setError('Please enter your answer before submitting');
             return;
@@ -37,9 +42,13 @@ const AssessmentSubmission = ({ open, onClose, assessment, onSubmitSuccess }) =>
         }
     };
 
+    if (!assessment) {
+        return null;
+    }
+
     return (
         <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-            <DialogTitle>Submit Answer: {assessment?.title}</DialogTitle>
+            <DialogTitle>Submit Answer: {assessment.title}</DialogTitle>
             <DialogContent>
                 {error && (
                     <Alert severity="error" sx={{ mb: 2 }}>
@@ -48,18 +57,18 @@ const AssessmentSubmission = ({ open, onClose, assessment, onSubmitSuccess }) =>
                 )}
 
                 <div style={{ marginBottom: '16px', marginTop: '8px' }}>
-                    <strong>Description:</strong> {assessment?.description}
+                    <strong>Description:</strong> {assessment.description}
                 </div>
 
                 <div style={{ marginBottom: '16px' }}>
-                    <strong>Type:</strong> {assessment?.type}
+                    <strong>Type:</strong> {assessment.type}
                 </div>
 
                 <div style={{ marginBottom: '16px' }}>
-                    <strong>Total Points:</strong> {assessment?.total_points}
+                    <strong>Total Points:</strong> {assessment.total_points}
                 </div>
 
-                {assessment?.due_date && (
+                {assessment.due_date && (
                     <div style={{ marginBottom: '16px' }}>
                         <strong>Due Date:</strong> {new Date(assessment.due_date).toLocaleDateString()}
                     </div>

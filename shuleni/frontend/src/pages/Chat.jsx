@@ -1,104 +1,127 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-    Container,
+    Box,
     Paper,
     Typography,
-    Box,
-    Card,
-    CardContent,
-    Grid,
-    Avatar,
-    Chip,
+    TextField,
+    Button,
+    List,
+    ListItem,
+    ListItemText,
+    Divider,
+    Container,
+    Grid
 } from '@mui/material';
-import {
-    Message as MessageIcon,
-    Group as GroupIcon,
-    Forum as ForumIcon,
-    Chat as ChatIcon,
-} from '@mui/icons-material';
+import { useAuth } from '../contexts/AuthContext';
+import { io } from 'socket.io-client';
 
 const Chat = () => {
-    const features = [
-        {
-            icon: <MessageIcon />,
-            title: 'Direct Messaging',
-            description: 'Send private messages to teachers, students, and administrators',
-            status: 'Coming Soon'
-        },
-        {
-            icon: <GroupIcon />,
-            title: 'Group Chats',
-            description: 'Create and participate in class-specific group discussions',
-            status: 'Coming Soon'
-        },
-        {
-            icon: <ForumIcon />,
-            title: 'Discussion Forums',
-            description: 'Engage in topic-based discussions and academic debates',
-            status: 'Coming Soon'
-        },
-        {
-            icon: <ChatIcon />,
-            title: 'Real-time Chat',
-            description: 'Instant messaging with real-time notifications and updates',
-            status: 'Coming Soon'
+    const { user } = useAuth();
+    const [messages, setMessages] = useState([]);
+    const [newMessage, setNewMessage] = useState('');
+    const [socket, setSocket] = useState(null);
+
+    useEffect(() => {
+        // Connect to the WebSocket server
+        const newSocket = io('http://localhost:5000', {
+            auth: {
+                token: localStorage.getItem('token')
+            }
+        });
+
+        setSocket(newSocket);
+
+        // Listen for incoming messages
+        newSocket.on('message', (message) => {
+            setMessages(prevMessages => [...prevMessages, message]);
+        });
+
+        // Cleanup on unmount
+        return () => newSocket.close();
+    }, []);
+
+    const handleSendMessage = (e) => {
+        e.preventDefault();
+        if (newMessage.trim() && socket) {
+            const messageData = {
+                content: newMessage,
+                sender: user.id,
+                senderName: `${user.first_name} ${user.last_name}`,
+                timestamp: new Date().toISOString()
+            };
+
+            // Emit the message to the server
+            socket.emit('message', messageData);
+            setNewMessage('');
         }
-    ];
+    };
 
     return (
-        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-            <Paper sx={{ p: 4, borderRadius: 2 }}>
-                <Box sx={{ textAlign: 'center', mb: 6 }}>
-                    <Typography variant="h3" component="h1" gutterBottom>
-                        Chat Features Coming Soon
-                    </Typography>
-                </Box>
-
-                <Grid container spacing={4}>
-                    {features.map((feature, index) => (
-                        <Grid item xs={12} sm={6} key={index}>
-                            <Card
-                                sx={{
-                                    height: '100%',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    transition: 'transform 0.2s, box-shadow 0.2s',
-                                    '&:hover': {
-                                        transform: 'translateY(-4px)',
-                                        boxShadow: 4,
-                                    }
-                                }}
-                            >
-                                <CardContent>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                                        <Avatar
-                                            sx={{
-                                                bgcolor: 'primary.main',
-                                                width: 56,
-                                                height: 56,
-                                                mr: 2
-                                            }}
-                                        >
-                                            {feature.icon}
-                                        </Avatar>
-                                        <Box>
-                                            <Typography variant="h6" gutterBottom>
-                                                {feature.title}
-                                            </Typography>
-                                            <Chip
-                                                label={feature.status}
-                                                color="primary"
-                                                size="small"
+        <Container>
+            <Paper elevation={3} sx={{ p: 3, mt: 3 }}>
+                <Typography variant="h4" gutterBottom>
+                    School Chat
+                </Typography>
+                <Grid container spacing={3}>
+                    <Grid item xs={12}>
+                        <Box sx={{ height: '60vh', overflow: 'auto' }}>
+                            <List>
+                                {messages.map((message, index) => (
+                                    <React.Fragment key={index}>
+                                        <ListItem alignItems="flex-start">
+                                            <ListItemText
+                                                primary={message.senderName}
+                                                secondary={
+                                                    <>
+                                                        <Typography
+                                                            component="span"
+                                                            variant="body2"
+                                                            color="text.primary"
+                                                        >
+                                                            {message.content}
+                                                        </Typography>
+                                                        <br />
+                                                        <Typography
+                                                            component="span"
+                                                            variant="caption"
+                                                            color="text.secondary"
+                                                        >
+                                                            {new Date(message.timestamp).toLocaleString()}
+                                                        </Typography>
+                                                    </>
+                                                }
                                             />
-                                        </Box>
-                                    </Box>
-                                    <Typography variant="body1" color="text.secondary">
-                                        {feature.description}
-                                    </Typography>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                    ))}
+                                        </ListItem>
+                                        <Divider variant="inset" component="li" />
+                                    </React.Fragment>
+                                ))}
+                            </List>
+                        </Box>
+                        <Box component="form" onSubmit={handleSendMessage} sx={{ mt: 2 }}>
+                            <Grid container spacing={2}>
+                                <Grid item xs={10}>
+                                    <TextField
+                                        fullWidth
+                                        variant="outlined"
+                                        placeholder="Type your message..."
+                                        value={newMessage}
+                                        onChange={(e) => setNewMessage(e.target.value)}
+                                    />
+                                </Grid>
+                                <Grid item xs={2}>
+                                    <Button
+                                        fullWidth
+                                        variant="contained"
+                                        color="primary"
+                                        type="submit"
+                                        sx={{ height: '100%' }}
+                                    >
+                                        Send
+                                    </Button>
+                                </Grid>
+                            </Grid>
+                        </Box>
+                    </Grid>
                 </Grid>
             </Paper>
         </Container>

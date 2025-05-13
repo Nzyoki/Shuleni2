@@ -163,9 +163,10 @@ export const hasPermission = (user, permission) => {
             'view_attendance',
             'participate_chat',
             'update_profile',
+            'view_own_assessments',
             'view_classes',
             'view_assessments',
-            'view_own_assessments'
+            'view_class_students'
         ]
     };
 
