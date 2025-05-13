@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
-socketio = SocketIO()
+socketio = SocketIO(cors_allowed_origins="*")
 
 def create_app(test_config=None):
     # Create and configure the app
@@ -45,12 +45,13 @@ def create_app(test_config=None):
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
+    socketio.init_app(app)
     
     # Enable CORS
     CORS(app)
 
     # Import and register blueprints
-    from .routes import auth, users, schools, classes, assessments, resources
+    from .routes import auth, users, schools, classes, assessments, resources, chat
     
     app.register_blueprint(auth.bp)
     app.register_blueprint(users.bp)
@@ -58,6 +59,7 @@ def create_app(test_config=None):
     app.register_blueprint(classes.bp)
     app.register_blueprint(assessments.bp)
     app.register_blueprint(resources.bp)
+    app.register_blueprint(chat.bp)
 
     @app.route('/health')
     def health():

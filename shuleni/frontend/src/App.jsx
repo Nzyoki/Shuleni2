@@ -15,6 +15,7 @@ import AssessmentManagement from './pages/AssessmentManagement';
 import AttendanceManagement from './pages/AttendanceManagement';
 import ResourceManagement from './pages/ResourceManagement';
 import Reports from './pages/Reports';
+import Chat from './pages/Chat';
 import './App.css';
 
 console.log('App component imported');
@@ -89,7 +90,7 @@ function App() {
                             } />
                             <Route path="chat" element={
                                 <ProtectedRoute requiredPermissions={["participate_chat", "monitor_chat"]}>
-                                    <div>Chat (Stub)</div>
+                                    <Chat />
                                 </ProtectedRoute>
                             } />
                             <Route path="reports" element={
