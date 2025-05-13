@@ -10,7 +10,7 @@ const AttendanceManagement = () => {
     const [error, setError] = useState('');
 
     useEffect(() => {
-        // TODO: Implement class fetching
+       
         setLoading(false);
     }, []);
 

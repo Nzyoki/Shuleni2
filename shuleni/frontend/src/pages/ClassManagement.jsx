@@ -193,7 +193,7 @@ const ClassManagement = () => {
         } catch (err) {
             setError(`Failed to delete class: ${err.message || 'Unknown error'}`);
         } finally {
-            setLoading(false);
+        setLoading(false);
         }
     };
 
@@ -234,8 +234,8 @@ const ClassManagement = () => {
                                 startIcon={<AddIcon />}
                                 onClick={handleOpenCreateDialog}
                                 sx={{ mr: 1 }}
-                            >
-                                Add Class
+                >
+                    Add Class
                             </Button>
                         )}
                         <IconButton
@@ -248,7 +248,7 @@ const ClassManagement = () => {
                     </Box>
                 </Box>
 
-                {error && (
+            {error && (
                     <Alert severity="error" sx={{ mb: 3 }}>
                         {error}
                     </Alert>
@@ -281,11 +281,11 @@ const ClassManagement = () => {
                             ) : classes.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={user.role === 'super_admin' ? 5 : 4} align="center">
-                                        No classes found
+                                    No classes found
                                     </TableCell>
                                 </TableRow>
-                            ) : (
-                                classes.map((classItem) => (
+                        ) : (
+                            classes.map((classItem) => (
                                     <TableRow key={classItem.id}>
                                         <TableCell>
                                             <Typography variant="body1" fontWeight="medium">

@@ -25,7 +25,8 @@ def create_app(test_config=None):
             SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(app.instance_path, 'shuleni.db'),
             SQLALCHEMY_TRACK_MODIFICATIONS=False,
             JWT_SECRET_KEY='dev-jwt-secret',
-            JWT_ACCESS_TOKEN_EXPIRES=timedelta(hours=1)
+            JWT_ACCESS_TOKEN_EXPIRES=timedelta(days=1),
+            CORS_HEADERS='Content-Type'
         )
     else:
         # Load the test config if passed in
@@ -49,12 +50,13 @@ def create_app(test_config=None):
     socketio.init_app(app)
 
     # Register blueprints
-    from .routes import auth, users, schools, classes, assessments, resources, chat
+    from .routes import auth, schools, users, classes, assessments, attendance, resources, chat
     app.register_blueprint(auth.bp)
-    app.register_blueprint(users.bp)
     app.register_blueprint(schools.bp)
+    app.register_blueprint(users.bp)
     app.register_blueprint(classes.bp)
     app.register_blueprint(assessments.bp)
+    app.register_blueprint(attendance.bp)
     app.register_blueprint(resources.bp)
     app.register_blueprint(chat.bp)
 

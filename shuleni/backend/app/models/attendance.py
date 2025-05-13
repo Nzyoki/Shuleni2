@@ -9,6 +9,7 @@ class Attendance(db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     date = db.Column(db.Date, nullable=False)
     status = db.Column(db.String(20), nullable=False)  # 'present', 'absent', 'late'
+    marked_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     notes = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -22,9 +23,10 @@ class Attendance(db.Model):
             'id': self.id,
             'class_id': self.class_id,
             'student_id': self.student_id,
-            'date': self.date.isoformat(),
+            'date': self.date.isoformat() if self.date else None,
             'status': self.status,
+            'marked_by': self.marked_by,
             'notes': self.notes,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat()
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         } 

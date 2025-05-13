@@ -18,8 +18,6 @@ import Reports from './pages/Reports';
 import Chat from './pages/Chat';
 import './App.css';
 
-console.log('App component imported');
-
 const theme = createTheme({
     palette: {
         primary: {
@@ -32,8 +30,6 @@ const theme = createTheme({
 });
 
 function App() {
-    console.log('App component rendering');
-
     return (
         <ThemeProvider theme={theme}>
             <Router>
