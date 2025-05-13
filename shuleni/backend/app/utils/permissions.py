@@ -71,55 +71,41 @@ def check_permission(user: User, permission: str) -> bool:
             'view_class_reports'
         ],
         'school_admin': [
-            # School Management
             'manage_school',
             'manage_teachers',
             'manage_students',
-            'manage_school_students',
             'manage_classes',
-            'manage_school_classes',
+            'create_classes',
+            'edit_classes',
+            'delete_classes',
+            'add_class',
             'manage_resources',
             'manage_assessments',
             'view_attendance',
             'manage_attendance',
-            'take_attendance',
             'monitor_chat',
             'view_school_reports',
-            
-            # User Management for their school
-            'view_users',
+            'view_reports',
+            'view_analytics',
+            'view_school_analytics',
             'manage_users',
             'create_users',
             'edit_users',
             'delete_users',
-            
-            # Analytics specifically for their school
-            'view_analytics',
-            'view_school_analytics',
-            'view_reports',
-            'view_school_reports',
-            
-            # Resource Management
-            'manage_resources',
+            'manage_school_students',
+            'manage_school_classes',
+            'view_class_students',
+            'manage_class_students',
+            'view_class_reports',
             'view_resources',
             'create_resources',
             'edit_resources',
             'delete_resources',
-            
-            # Assessment Management
-            'manage_assessments',
             'view_assessments',
             'create_assessments',
             'edit_assessments',
             'grade_assessments',
-            
-            # Class Management
-            'view_class_students',
-            'manage_class_students',
-            'view_class_reports',
             'manage_class_assessments',
-            
-            # Communication within school
             'participate_chat',
             'send_notifications'
         ],
@@ -142,8 +128,12 @@ def check_permission(user: User, permission: str) -> bool:
         ]
     }
 
-    # If permission is an array, check if user has any of them
+    # Check if user has any of the permissions (if a list is provided)
     if isinstance(permission, list):
-        return any(perm in role_permissions.get(user.role, []) for perm in permission)
+        for p in permission:
+            if p in role_permissions.get(user.role, []):
+                return True
+        return False
     
+    # Check for a single permission
     return permission in role_permissions.get(user.role, []) 

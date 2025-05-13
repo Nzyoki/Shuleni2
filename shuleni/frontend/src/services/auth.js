@@ -2,7 +2,7 @@ import api from './api';
 
 export const login = async (credentials) => {
     try {
-        const response = await api.post('/auth/login', {
+        const response = await api.post('/api/auth/login', {
             email: credentials.email,
             password: credentials.password
         });
@@ -20,7 +20,7 @@ export const login = async (credentials) => {
 
 export const register = async (userData) => {
     try {
-        const response = await api.post('/auth/register', userData);
+        const response = await api.post('/api/auth/register', userData);
         if (response.data.access_token) {
             localStorage.setItem('token', response.data.access_token);
             return response.data;
@@ -39,7 +39,7 @@ export const logout = () => {
 
 export const getCurrentUser = async () => {
     try {
-        const response = await api.get('/auth/me');
+        const response = await api.get('/api/auth/me');
         return response.data;
     } catch (error) {
         console.error('Get current user error:', error.response?.data || error.message);
@@ -110,55 +110,37 @@ export const hasPermission = (user, permission) => {
             'view_class_reports'
         ],
         school_admin: [
-            // School Management
             'manage_school',
             'manage_teachers',
             'manage_students',
-            'manage_school_students',
             'manage_classes',
-            'manage_school_classes',
             'manage_resources',
             'manage_assessments',
             'view_attendance',
             'manage_attendance',
-            'take_attendance',
             'monitor_chat',
             'view_school_reports',
-
-            // User Management for their school
-            'view_users',
+            'view_reports',
+            'view_analytics',
+            'view_school_analytics',
             'manage_users',
             'create_users',
             'edit_users',
             'delete_users',
-
-            // Analytics specifically for their school
-            'view_analytics',
-            'view_school_analytics',
-            'view_reports',
-            'view_school_reports',
-
-            // Resource Management
-            'manage_resources',
+            'manage_school_students',
+            'manage_school_classes',
+            'view_class_students',
+            'manage_class_students',
+            'view_class_reports',
             'view_resources',
             'create_resources',
             'edit_resources',
             'delete_resources',
-
-            // Assessment Management
-            'manage_assessments',
             'view_assessments',
             'create_assessments',
             'edit_assessments',
             'grade_assessments',
-
-            // Class Management
-            'view_class_students',
-            'manage_class_students',
-            'view_class_reports',
             'manage_class_assessments',
-
-            // Communication within school
             'participate_chat',
             'send_notifications'
         ],

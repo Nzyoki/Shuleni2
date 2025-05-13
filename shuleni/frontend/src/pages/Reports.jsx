@@ -1,65 +1,95 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { getAnalytics, getPerformanceReport } from '../services/reports';
 import {
-    Container,
-    Typography,
-    Box,
-    Paper,
-    Select,
-    MenuItem,
-    InputLabel,
-    FormControl,
-    Grid,
-    Button,
-    TextField,
-    CircularProgress,
-    Alert,
-    Tabs,
-    Tab
+    Container, Typography, Box, Paper, Grid,
+    FormControl, InputLabel, MenuItem, Select,
+    TextField, Button, CircularProgress, Tabs, Tab,
+    Card, CardContent, CardHeader, Divider
 } from '@mui/material';
+import {
+    BarChart, Bar, LineChart, Line, PieChart, Pie,
+    XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+    ResponsiveContainer, Cell
+} from 'recharts';
 
 const Reports = () => {
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [selectedReport, setSelectedReport] = useState('performance');
+    const [selectedTab, setSelectedTab] = useState(0);
     const [reportData, setReportData] = useState(null);
-    const [activeTab, setActiveTab] = useState(0);
     const [dateRange, setDateRange] = useState({
-        startDate: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0],
+        startDate: new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString().split('T')[0],
         endDate: new Date().toISOString().split('T')[0]
     });
 
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        setError('');
+    // Mock data generator
+    const generateMockData = useCallback(() => {
+        // Performance data
+        const subjects = ['Mathematics', 'English', 'Science', 'History', 'Geography', 'Art'];
+        const performanceData = subjects.map(subject => ({
+            name: subject,
+            average: Math.floor(Math.random() * 30) + 60,
+            highest: Math.floor(Math.random() * 20) + 80,
+            lowest: Math.floor(Math.random() * 30) + 40,
+        }));
 
-        try {
-            // Fetch analytics data from API
-            const analyticsData = await getAnalytics(selectedReport, dateRange);
-            setReportData(analyticsData);
-        } catch (err) {
-            console.error('Error loading analytics:', err);
-            setError('Failed to load analytics data. ' + (err.message || ''));
+        // Student data
+        const studentData = [
+            { name: 'Active', value: Math.floor(Math.random() * 200) + 300 },
+            { name: 'Inactive', value: Math.floor(Math.random() * 30) + 10 },
+            { name: 'New', value: Math.floor(Math.random() * 40) + 20 },
+        ];
 
-            // Fall back to mock data if API fails
-            generateMockData();
-        } finally {
-            setLoading(false);
-        }
-    }, [selectedReport, dateRange]);
+        // Attendance data
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const attendanceData = months.map(month => ({
+            name: month,
+            present: Math.floor(Math.random() * 20) + 80,
+            absent: Math.floor(Math.random() * 15),
+            late: Math.floor(Math.random() * 10),
+        }));
+
+        // Classes data
+        const classData = [
+            { name: 'Class 1', students: Math.floor(Math.random() * 15) + 25 },
+            { name: 'Class 2', students: Math.floor(Math.random() * 15) + 25 },
+            { name: 'Class 3', students: Math.floor(Math.random() * 15) + 25 },
+            { name: 'Class 4', students: Math.floor(Math.random() * 15) + 25 },
+            { name: 'Class 5', students: Math.floor(Math.random() * 15) + 25 },
+        ];
+
+        // Trends data
+        const trendData = months.map(month => ({
+            name: month,
+            performance: Math.floor(Math.random() * 30) + 60,
+            attendance: Math.floor(Math.random() * 15) + 80,
+        }));
+
+        return {
+            performance: performanceData,
+            students: studentData,
+            attendance: attendanceData,
+            classes: classData,
+            trends: trendData,
+            summary: {
+                totalStudents: studentData.reduce((acc, curr) => acc + curr.value, 0),
+                averageAttendance: Math.floor(Math.random() * 10) + 85,
+                averagePerformance: Math.floor(Math.random() * 15) + 70,
+                totalClasses: classData.length,
+            }
+        };
+    }, []);
 
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        // Generate mock data on component mount
+        const mockData = generateMockData();
+        setReportData(mockData);
+        setLoading(false);
+    }, [generateMockData]);
 
     const handleTabChange = (event, newValue) => {
-        setActiveTab(newValue);
-    };
-
-    const handleReportChange = (e) => {
-        setSelectedReport(e.target.value);
+        setSelectedTab(newValue);
     };
 
     const handleDateChange = (e) => {
@@ -70,43 +100,16 @@ const Reports = () => {
         }));
     };
 
-    const generateReport = async () => {
-        await fetchData();
+    const refreshData = () => {
+            setLoading(true);
+        setTimeout(() => {
+            const mockData = generateMockData();
+            setReportData(mockData);
+            setLoading(false);
+        }, 800);
     };
 
-    // Fallback to generate mock data if API fails
-    const generateMockData = () => {
-        const data = {
-            report_type: selectedReport,
-            date_range: dateRange,
-            summary: {
-                total_schools: user.role === 'super_admin' ? 5 : 1,
-                total_students: user.role === 'super_admin' ? 1250 : 350,
-                total_classes: user.role === 'super_admin' ? 45 : 12,
-                average_performance: 78,
-                attendance_rate: 92
-            },
-            performance: {
-                title: user.role === 'super_admin' ? 'System-wide Performance' : 'School Performance',
-                labels: ['Term 1', 'Term 2', 'Term 3'],
-                datasets: [
-                    {
-                        label: 'Average Score',
-                        data: [75, 82, 78],
-                        backgroundColor: '#4CAF50'
-                    }
-                ]
-            },
-            students: {
-                title: user.role === 'super_admin' ? 'All Students Overview' : `Students in ${user.school_name || 'Your School'}`,
-                total: user.role === 'super_admin' ? 1250 : 350,
-                active: user.role === 'super_admin' ? 1180 : 330,
-                growth: user.role === 'super_admin' ? '+12%' : '+8%'
-            }
-        };
-
-        setReportData(data);
-    };
+    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
     if (loading) {
         return (
@@ -118,180 +121,238 @@ const Reports = () => {
 
     return (
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-            <Paper sx={{ p: 3 }}>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+            <Grid container spacing={3} justifyContent="space-between" alignItems="center" mb={3}>
+                <Grid item>
                     <Typography variant="h4" component="h1">
-                        {user.role === 'super_admin' ? 'System Analytics' : 'School Analytics'}
+                        Analytics Dashboard
                     </Typography>
-                </Box>
+                </Grid>
+                <Grid item>
+                    <Box display="flex" gap={2}>
+                        <TextField
+                            label="From"
+                            type="date"
+                            name="startDate"
+                            value={dateRange.startDate}
+                            onChange={handleDateChange}
+                            sx={{ width: 170 }}
+                            InputLabelProps={{ shrink: true }}
+                        />
+                        <TextField
+                            label="To"
+                            type="date"
+                            name="endDate"
+                            value={dateRange.endDate}
+                            onChange={handleDateChange}
+                            sx={{ width: 170 }}
+                            InputLabelProps={{ shrink: true }}
+                        />
+                        <Button
+                            variant="contained"
+                            onClick={refreshData}
+                            disabled={loading}
+                        >
+                            Refresh Data
+                        </Button>
+                    </Box>
+                </Grid>
+            </Grid>
 
             {error && (
-                    <Alert severity="error" sx={{ mb: 3 }}>
-                        {error}
-                    </Alert>
-                )}
-
-                <Tabs value={activeTab} onChange={handleTabChange} sx={{ mb: 3 }}>
-                    <Tab label="Performance" />
-                    <Tab label="Students" />
-                    <Tab label="Classes" />
-                    <Tab label="Trends" />
-                </Tabs>
-
                 <Box sx={{ mb: 3 }}>
-                    <Grid container spacing={2}>
-                        <Grid item xs={12} md={4}>
-                            <FormControl fullWidth>
-                                <InputLabel id="report-type-label">Report Type</InputLabel>
-                                <Select
-                                    labelId="report-type-label"
-                                    id="report-type"
-                            value={selectedReport}
-                                    label="Report Type"
-                            onChange={handleReportChange}
-                        >
-                                    <MenuItem value="performance">Performance Analytics</MenuItem>
-                                    <MenuItem value="attendance">Attendance Statistics</MenuItem>
-                                    <MenuItem value="enrollment">Enrollment Trends</MenuItem>
-                                    {user.role === 'super_admin' && (
-                                        <MenuItem value="financial">Financial Reports</MenuItem>
-                                    )}
-                                </Select>
-                            </FormControl>
+                    <Alert severity="error">{error}</Alert>
+                </Box>
+            )}
+
+            {reportData && (
+                <>
+                    {/* Summary Cards */}
+                    <Grid container spacing={3} mb={4}>
+                        <Grid item xs={12} sm={6} md={3}>
+                            <Card>
+                                <CardContent>
+                                    <Typography color="textSecondary" gutterBottom>
+                                        Total Students
+                                    </Typography>
+                                    <Typography variant="h4">
+                                        {reportData.summary.totalStudents}
+                                    </Typography>
+                                </CardContent>
+                            </Card>
                         </Grid>
-                        <Grid item xs={6} md={3}>
-                            <TextField
-                                fullWidth
-                                label="Start Date"
-                                type="date"
-                                name="startDate"
-                                value={dateRange.startDate}
-                                onChange={handleDateChange}
-                                InputLabelProps={{ shrink: true }}
-                            />
+                        <Grid item xs={12} sm={6} md={3}>
+                            <Card>
+                                <CardContent>
+                                    <Typography color="textSecondary" gutterBottom>
+                                        Average Attendance
+                                    </Typography>
+                                    <Typography variant="h4">
+                                        {reportData.summary.averageAttendance}%
+                                    </Typography>
+                                </CardContent>
+                            </Card>
                         </Grid>
-                        <Grid item xs={6} md={3}>
-                            <TextField
-                                fullWidth
-                                label="End Date"
-                                type="date"
-                                name="endDate"
-                                value={dateRange.endDate}
-                                onChange={handleDateChange}
-                                InputLabelProps={{ shrink: true }}
-                            />
+                        <Grid item xs={12} sm={6} md={3}>
+                            <Card>
+                                <CardContent>
+                                    <Typography color="textSecondary" gutterBottom>
+                                        Average Performance
+                                    </Typography>
+                                    <Typography variant="h4">
+                                        {reportData.summary.averagePerformance}%
+                                    </Typography>
+                                </CardContent>
+                            </Card>
                         </Grid>
-                        <Grid item xs={12} md={2}>
-                            <Button
-                                fullWidth
-                                variant="contained"
-                        onClick={generateReport}
-                                sx={{ height: '56px' }}
-                            >
-                                Generate
-                            </Button>
+                        <Grid item xs={12} sm={6} md={3}>
+                            <Card>
+                                <CardContent>
+                                    <Typography color="textSecondary" gutterBottom>
+                                        Total Classes
+                                    </Typography>
+                                    <Typography variant="h4">
+                                        {reportData.summary.totalClasses}
+                                    </Typography>
+                                </CardContent>
+                            </Card>
                         </Grid>
                     </Grid>
-                </Box>
 
-                {reportData && (
-                    <Box>
-                        <Typography variant="h5" gutterBottom>
-                            {reportData[selectedReport]?.title || (reportData.report_type === selectedReport ?
-                                `${selectedReport.charAt(0).toUpperCase() + selectedReport.slice(1)} Report` :
-                                'Report Results')}
-                        </Typography>
-                        <Box sx={{ bgcolor: 'background.paper', p: 3, borderRadius: 1, minHeight: '300px' }}>
-                            {activeTab === 0 && (
-                                <Box>
-                                    <Typography variant="h6">Performance Overview</Typography>
-                                    {reportData.summary && (
-                                        <Grid container spacing={3} sx={{ mt: 1 }}>
-                                            <Grid item xs={12} md={4}>
-                                                <Paper sx={{ p: 2, textAlign: 'center' }}>
-                                                    <Typography variant="h4">{reportData.summary.average_performance}%</Typography>
-                                                    <Typography variant="body1">Average Performance</Typography>
-                                                </Paper>
-                                            </Grid>
-                                            <Grid item xs={12} md={4}>
-                                                <Paper sx={{ p: 2, textAlign: 'center' }}>
-                                                    <Typography variant="h4">{reportData.summary.total_classes}</Typography>
-                                                    <Typography variant="body1">Classes</Typography>
-                                                </Paper>
-                                            </Grid>
-                                            <Grid item xs={12} md={4}>
-                                                <Paper sx={{ p: 2, textAlign: 'center' }}>
-                                                    <Typography variant="h4">{reportData.summary.attendance_rate}%</Typography>
-                                                    <Typography variant="body1">Attendance Rate</Typography>
-                                                </Paper>
-                                            </Grid>
-                                        </Grid>
-                                    )}
-                                </Box>
+                    {/* Tabs */}
+                    <Paper sx={{ width: '100%', mb: 4 }}>
+                        <Tabs
+                            value={selectedTab}
+                            onChange={handleTabChange}
+                            indicatorColor="primary"
+                            textColor="primary"
+                            variant="fullWidth"
+                        >
+                            <Tab label="Performance" />
+                            <Tab label="Students" />
+                            <Tab label="Classes" />
+                            <Tab label="Trends" />
+                        </Tabs>
+
+                        <Box p={3}>
+                            {/* Performance Tab */}
+                            {selectedTab === 0 && (
+                                <Grid container spacing={3}>
+                                    <Grid item xs={12}>
+                                        <Typography variant="h6" mb={2}>Subject Performance</Typography>
+                                        <ResponsiveContainer width="100%" height={400}>
+                                            <BarChart
+                                                data={reportData.performance}
+                                                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                                            >
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <XAxis dataKey="name" />
+                                                <YAxis />
+                                                <Tooltip />
+                                                <Legend />
+                                                <Bar dataKey="average" fill="#8884d8" name="Average Score" />
+                                                <Bar dataKey="highest" fill="#82ca9d" name="Highest Score" />
+                                                <Bar dataKey="lowest" fill="#ffc658" name="Lowest Score" />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </Grid>
+                                </Grid>
                             )}
 
-                            {activeTab === 1 && (
-                                <Box>
-                                    <Typography variant="h6">Student Overview</Typography>
-                                    {reportData.summary && (
-                                        <Grid container spacing={3} sx={{ mt: 1 }}>
-                                            <Grid item xs={12} md={6}>
-                                                <Paper sx={{ p: 2, textAlign: 'center' }}>
-                                                    <Typography variant="h4">{reportData.summary.total_students}</Typography>
-                                                    <Typography variant="body1">Total Students</Typography>
-                                                </Paper>
-                                            </Grid>
-                                            <Grid item xs={12} md={6}>
-                                                <Paper sx={{ p: 2, textAlign: 'center' }}>
-                                                    <Typography variant="h4">{user.role === 'super_admin' ? reportData.summary.total_schools : 1}</Typography>
-                                                    <Typography variant="body1">{user.role === 'super_admin' ? 'Schools' : 'School'}</Typography>
-                                                </Paper>
-                                            </Grid>
-                                        </Grid>
-                                    )}
-                                </Box>
+                            {/* Students Tab */}
+                            {selectedTab === 1 && (
+                                <Grid container spacing={3}>
+                                    <Grid item xs={12} md={6}>
+                                        <Typography variant="h6" mb={2}>Student Distribution</Typography>
+                                        <ResponsiveContainer width="100%" height={300}>
+                                            <PieChart>
+                                                <Pie
+                                                    data={reportData.students}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    labelLine={false}
+                                                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                                                    outerRadius={100}
+                                                    fill="#8884d8"
+                                                    dataKey="value"
+                                                >
+                                                    {reportData.students.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip formatter={(value) => value} />
+                                                <Legend />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </Grid>
+                                    <Grid item xs={12} md={6}>
+                                        <Typography variant="h6" mb={2}>Monthly Attendance</Typography>
+                                        <ResponsiveContainer width="100%" height={300}>
+                                            <BarChart
+                                                data={reportData.attendance.slice(0, 6)}
+                                                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                                            >
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <XAxis dataKey="name" />
+                                                <YAxis />
+                                                <Tooltip />
+                                                <Legend />
+                                                <Bar dataKey="present" stackId="a" fill="#82ca9d" name="Present" />
+                                                <Bar dataKey="absent" stackId="a" fill="#ff8042" name="Absent" />
+                                                <Bar dataKey="late" stackId="a" fill="#8884d8" name="Late" />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </Grid>
+                                </Grid>
                             )}
 
-                            {activeTab === 2 && (
-                                <Box>
-                                    <Typography variant="h6">Classes Analytics</Typography>
-                                    {reportData.classes ? (
-                                        <Grid container spacing={2} sx={{ mt: 1 }}>
-                                            {reportData.classes.map((classItem, index) => (
-                                                <Grid item xs={12} sm={6} md={4} key={index}>
-                                                    <Paper sx={{ p: 2 }}>
-                                                        <Typography variant="h6">{classItem.name}</Typography>
-                                                        <Typography>Performance: {classItem.performance}%</Typography>
-                                                        <Typography>Attendance: {classItem.attendance}%</Typography>
-                                                        <Typography>Students: {classItem.student_count}</Typography>
-                                                    </Paper>
-                                                </Grid>
-                                            ))}
-                                        </Grid>
-                                    ) : (
-                                        <Typography variant="body1" sx={{ mt: 2 }}>
-                                            {user.role === 'super_admin'
-                                                ? 'Showing metrics for all classes across all schools.'
-                                                : 'Showing metrics for all classes in your school.'}
-                                        </Typography>
-                                    )}
-                                </Box>
+                            {/* Classes Tab */}
+                            {selectedTab === 2 && (
+                                <Grid container spacing={3}>
+                                    <Grid item xs={12}>
+                                        <Typography variant="h6" mb={2}>Class Size Distribution</Typography>
+                                        <ResponsiveContainer width="100%" height={400}>
+                                            <BarChart
+                                                data={reportData.classes}
+                                                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                                            >
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <XAxis dataKey="name" />
+                                                <YAxis />
+                                                <Tooltip />
+                                                <Legend />
+                                                <Bar dataKey="students" fill="#8884d8" name="Number of Students" />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </Grid>
+                                </Grid>
                             )}
 
-                            {activeTab === 3 && (
-                                <Box>
-                                    <Typography variant="h6">Trend Analysis</Typography>
-                                    <Typography variant="body1" sx={{ mt: 2 }}>
-                                        {user.role === 'super_admin'
-                                            ? 'Showing long-term trends across the entire system.'
-                                            : 'Showing long-term trends for your school.'}
-                                    </Typography>
-                                </Box>
+                            {/* Trends Tab */}
+                            {selectedTab === 3 && (
+                                <Grid container spacing={3}>
+                                    <Grid item xs={12}>
+                                        <Typography variant="h6" mb={2}>Performance & Attendance Trends</Typography>
+                                        <ResponsiveContainer width="100%" height={400}>
+                                            <LineChart
+                                                data={reportData.trends}
+                                                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                                            >
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <XAxis dataKey="name" />
+                                                <YAxis />
+                                                <Tooltip />
+                                                <Legend />
+                                                <Line type="monotone" dataKey="performance" stroke="#8884d8" name="Average Performance %" activeDot={{ r: 8 }} />
+                                                <Line type="monotone" dataKey="attendance" stroke="#82ca9d" name="Attendance %" />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    </Grid>
+                                </Grid>
                             )}
                         </Box>
-                    </Box>
-                )}
-            </Paper>
+                    </Paper>
+                </>
+            )}
         </Container>
     );
 };

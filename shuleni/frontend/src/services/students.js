@@ -11,7 +11,7 @@ export const getStudents = async (schoolId = null) => {
             params.append('school_id', schoolId);
         }
 
-        const response = await api.get(`/users?${params.toString()}`);
+        const response = await api.get(`/api/users?${params.toString()}`);
         return response.data.users || [];
     } catch (error) {
         console.error('Error fetching students:', error);
@@ -28,7 +28,7 @@ export const getStudentsBySchool = async (schoolId) => {
 
 export const getStudent = async (id) => {
     try {
-        const response = await api.get(`/users/${id}`);
+        const response = await api.get(`/api/users/${id}`);
         return response.data;
     } catch (error) {
         console.error('Error fetching student details:', error);
@@ -44,7 +44,7 @@ export const createStudent = async (studentData) => {
             role: 'student'
         };
 
-        const response = await api.post('/users', data);
+        const response = await api.post('/api/users', data);
         return response.data.user;
     } catch (error) {
         console.error('Error creating student:', error);
@@ -54,7 +54,7 @@ export const createStudent = async (studentData) => {
 
 export const updateStudent = async (id, studentData) => {
     try {
-        const response = await api.put(`/users/${id}`, studentData);
+        const response = await api.put(`/api/users/${id}`, studentData);
         return response.data.user;
     } catch (error) {
         console.error('Error updating student:', error);
@@ -64,7 +64,7 @@ export const updateStudent = async (id, studentData) => {
 
 export const deleteStudent = async (id) => {
     try {
-        const response = await api.delete(`/users/${id}`);
+        const response = await api.delete(`/api/users/${id}`);
         return response.data;
     } catch (error) {
         console.error('Error deleting student:', error);
@@ -74,7 +74,7 @@ export const deleteStudent = async (id) => {
 
 export const getStudentClasses = async (studentId) => {
     try {
-        const response = await api.get(`/users/${studentId}/classes`);
+        const response = await api.get(`/api/users/${studentId}/classes`);
         return response.data.classes;
     } catch (error) {
         console.error('Error fetching student classes:', error);
@@ -84,7 +84,7 @@ export const getStudentClasses = async (studentId) => {
 
 export const getStudentAssessments = async (studentId) => {
     try {
-        const response = await api.get(`/users/${studentId}/assessments`);
+        const response = await api.get(`/api/users/${studentId}/assessments`);
         return response.data.assessments;
     } catch (error) {
         console.error('Error fetching student assessments:', error);

@@ -8,14 +8,12 @@ import {
     Box,
     Card,
     CardContent,
-    CardHeader,
     List,
     ListItem,
     ListItemText,
     ListItemIcon,
     Divider,
     CircularProgress,
-    Button,
 } from '@mui/material';
 import {
     School as SchoolIcon,
@@ -52,7 +50,6 @@ const StatCard = ({ title, value, icon, isLoading }) => (
 );
 
 const Dashboard = () => {
-    const { user } = useAuth();
     const navigate = useNavigate();
     const [stats, setStats] = useState({
         schools: 0,
@@ -60,13 +57,20 @@ const Dashboard = () => {
         students: 0,
         assessments: 0,
     });
-    const [recentActivity, setRecentActivity] = useState([]);
     const [loading, setLoading] = useState({
         schools: true,
         classes: true,
         students: true,
         assessments: true,
     });
+
+    // Create example activity data
+    const recentActivity = [
+        { title: "New student added to Math Class", timestamp: "Today 11:30 AM" },
+        { title: "Assessment 'Midterm Exam' created", timestamp: "Yesterday 4:15 PM" },
+        { title: "New class 'Physics 101' created", timestamp: "Yesterday 2:30 PM" },
+        { title: "System update completed", timestamp: "May 10, 2025" }
+    ];
 
     useEffect(() => {
         const fetchStats = async () => {

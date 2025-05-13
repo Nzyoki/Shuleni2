@@ -14,20 +14,19 @@ export const getAssessmentsByClass = async (classId) => {
 
 export const getAssessments = async () => {
     try {
-        // This is a placeholder since there's no "get all assessments" endpoint
-        // In a real app, you might want to fetch assessments for all classes
-        // the current user is involved with
-        console.warn('getAssessments called without a class ID - this is not directly supported by the API');
-        return [];
+        // Get all assessments (filtered by user role on the server)
+        const response = await api.get('/api/assessments');
+        return response.data.assessments || [];
     } catch (error) {
-        console.error('Error fetching assessments:', error);
-        throw error.response?.data?.error || error.message || 'Failed to fetch assessments';
+        console.error('Error fetching all assessments:', error);
+        // Return empty array instead of throwing to avoid breaking dashboard
+        return [];
     }
 };
 
-export const getAssessment = async (id) => {
+export const getAssessment = async (assessmentId) => {
     try {
-        const response = await api.get(`/api/assessments/${id}`);
+        const response = await api.get(`/api/assessments/${assessmentId}`);
         return response.data;
     } catch (error) {
         console.error('Error fetching assessment details:', error);
@@ -45,9 +44,9 @@ export const createAssessment = async (classId, assessmentData) => {
     }
 };
 
-export const updateAssessment = async (id, assessmentData) => {
+export const updateAssessment = async (assessmentId, assessmentData) => {
     try {
-        const response = await api.put(`/api/assessments/${id}`, assessmentData);
+        const response = await api.put(`/api/assessments/${assessmentId}`, assessmentData);
         return response.data.assessment;
     } catch (error) {
         console.error('Error updating assessment:', error);
@@ -55,9 +54,9 @@ export const updateAssessment = async (id, assessmentData) => {
     }
 };
 
-export const deleteAssessment = async (id) => {
+export const deleteAssessment = async (assessmentId) => {
     try {
-        const response = await api.delete(`/api/assessments/${id}`);
+        const response = await api.delete(`/api/assessments/${assessmentId}`);
         return response.data;
     } catch (error) {
         console.error('Error deleting assessment:', error);
@@ -78,7 +77,7 @@ export const submitAssessment = async (assessmentId, submissionData) => {
 export const getAssessmentSubmissions = async (assessmentId) => {
     try {
         const response = await api.get(`/api/assessments/${assessmentId}/submissions`);
-        return response.data.submissions;
+        return response.data.submissions || [];
     } catch (error) {
         console.error('Error fetching submissions:', error);
         throw error.response?.data?.error || error.message || 'Failed to fetch submissions';

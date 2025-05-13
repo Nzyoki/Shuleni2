@@ -76,7 +76,6 @@ def create_app(test_config=None):
     from .routes.resources import bp as resources_bp
     from .routes.assessments import bp as assessments_bp
     from .routes.users import bp as users_bp
-    from .routes.reports import bp as reports_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(schools_bp)
@@ -85,6 +84,5 @@ def create_app(test_config=None):
     app.register_blueprint(resources_bp)
     app.register_blueprint(assessments_bp)
     app.register_blueprint(users_bp)
-    app.register_blueprint(reports_bp)
     
-    return app
+    return app 

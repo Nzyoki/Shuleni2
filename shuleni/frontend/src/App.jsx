@@ -92,7 +92,7 @@ function App() {
                                 </ProtectedRoute>
                             } />
                             <Route path="reports" element={
-                                <ProtectedRoute requiredPermissions={['view_reports', 'view_school_reports', 'view_class_reports', 'view_analytics', 'view_school_analytics']}>
+                                <ProtectedRoute requiredPermissions={['view_reports', 'view_school_reports', 'view_class_reports']}>
                                     <Reports />
                                 </ProtectedRoute>
                             } />
