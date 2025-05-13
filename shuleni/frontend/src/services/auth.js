@@ -159,9 +159,13 @@ export const hasPermission = (user, permission) => {
         student: [
             'view_resources',
             'take_assessments',
+            'submit_assessments',
             'view_attendance',
             'participate_chat',
-            'update_profile'
+            'update_profile',
+            'view_classes',
+            'view_assessments',
+            'view_own_assessments'
         ]
     };
 

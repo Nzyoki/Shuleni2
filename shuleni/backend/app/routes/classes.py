@@ -204,4 +204,51 @@ def remove_student(class_id, student_id):
     return jsonify({
         'message': 'Student removed from class successfully',
         'class': class_.to_dict()
-    }), 200 
+    }), 200
+
+@bp.route('/auto-enroll-students', methods=['POST'])
+@jwt_required()
+def auto_enroll_students():
+    """
+    Testing utility endpoint to auto-enroll all students in all classes in their school.
+    This is helpful for quickly setting up test data.
+    """
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    
+    # Only super admin or school admin can use this utility
+    if current_user.role not in ['super_admin', 'school_admin']:
+        return jsonify({'error': 'Only administrators can use this utility'}), 403
+    
+    try:
+        # For each school
+        if current_user.role == 'super_admin':
+            schools = School.query.all()
+        else:
+            schools = [School.query.get(current_user.school_id)]
+        
+        enrollment_count = 0
+        
+        for school in schools:
+            # Get all students in this school
+            students = User.query.filter_by(school_id=school.id, role='student').all()
+            
+            # Get all classes in this school
+            classes = Class.query.filter_by(school_id=school.id).all()
+            
+            # Enroll each student in each class
+            for student in students:
+                for class_ in classes:
+                    if student not in class_.students:
+                        class_.students.append(student)
+                        enrollment_count += 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'Successfully enrolled students in classes. {enrollment_count} new enrollments created.'
+        }), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to auto-enroll students: {str(e)}'}), 500 

@@ -193,7 +193,7 @@ const ClassManagement = () => {
         } catch (err) {
             setError(`Failed to delete class: ${err.message || 'Unknown error'}`);
         } finally {
-        setLoading(false);
+            setLoading(false);
         }
     };
 
@@ -227,15 +227,17 @@ const ClassManagement = () => {
                         Class Management
                     </Typography>
                     <Box>
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            startIcon={<AddIcon />}
-                            onClick={handleOpenCreateDialog}
-                            sx={{ mr: 1 }}
-                >
-                    Add Class
-                        </Button>
+                        {user.role !== 'student' && (
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                startIcon={<AddIcon />}
+                                onClick={handleOpenCreateDialog}
+                                sx={{ mr: 1 }}
+                            >
+                                Add Class
+                            </Button>
+                        )}
                         <IconButton
                             color="primary"
                             onClick={fetchData}
@@ -246,7 +248,7 @@ const ClassManagement = () => {
                     </Box>
                 </Box>
 
-            {error && (
+                {error && (
                     <Alert severity="error" sx={{ mb: 3 }}>
                         {error}
                     </Alert>
@@ -279,11 +281,11 @@ const ClassManagement = () => {
                             ) : classes.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={user.role === 'super_admin' ? 5 : 4} align="center">
-                                    No classes found
+                                        No classes found
                                     </TableCell>
                                 </TableRow>
-                        ) : (
-                            classes.map((classItem) => (
+                            ) : (
+                                classes.map((classItem) => (
                                     <TableRow key={classItem.id}>
                                         <TableCell>
                                             <Typography variant="body1" fontWeight="medium">
@@ -296,22 +298,26 @@ const ClassManagement = () => {
                                         <TableCell>{getTeacherName(classItem.teacher_id)}</TableCell>
                                         <TableCell>{classItem.description || 'No description'}</TableCell>
                                         <TableCell>
-                                            <Tooltip title="Edit">
-                                                <IconButton
-                                                    color="primary"
-                                                    onClick={() => handleOpenEditDialog(classItem)}
-                                                >
-                                                    <EditIcon />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Delete">
-                                                <IconButton
-                                                    color="error"
-                                                    onClick={() => handleOpenDeleteDialog(classItem)}
-                                                >
-                                                    <DeleteIcon />
-                                                </IconButton>
-                                            </Tooltip>
+                                            {user.role !== 'student' && (
+                                                <>
+                                                    <Tooltip title="Edit">
+                                                        <IconButton
+                                                            color="primary"
+                                                            onClick={() => handleOpenEditDialog(classItem)}
+                                                        >
+                                                            <EditIcon />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    <Tooltip title="Delete">
+                                                        <IconButton
+                                                            color="error"
+                                                            onClick={() => handleOpenDeleteDialog(classItem)}
+                                                        >
+                                                            <DeleteIcon />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 ))

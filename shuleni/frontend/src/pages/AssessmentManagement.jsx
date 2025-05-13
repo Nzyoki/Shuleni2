@@ -44,8 +44,10 @@ import {
     Edit as EditIcon,
     Delete as DeleteIcon,
     List as ListIcon,
-    Refresh as RefreshIcon
+    Refresh as RefreshIcon,
+    Assignment as AssignmentIcon
 } from '@mui/icons-material';
+import AssessmentSubmission from '../components/AssessmentSubmission';
 
 const AssessmentManagement = () => {
     const { user } = useAuth();
@@ -63,6 +65,8 @@ const AssessmentManagement = () => {
     const [openSubmissionsDialog, setOpenSubmissionsDialog] = useState(false);
     const [currentAssessment, setCurrentAssessment] = useState(null);
     const [submissions, setSubmissions] = useState([]);
+    const [openSubmitDialog, setOpenSubmitDialog] = useState(false);
+    const [currentAssessmentForSubmission, setCurrentAssessmentForSubmission] = useState(null);
 
     // Form data
     const [formData, setFormData] = useState({
@@ -175,6 +179,11 @@ const AssessmentManagement = () => {
         }
     };
 
+    const handleOpenSubmitDialog = (assessment) => {
+        setCurrentAssessmentForSubmission(assessment);
+        setOpenSubmitDialog(true);
+    };
+
     const handleFormChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({
@@ -282,16 +291,18 @@ const AssessmentManagement = () => {
                         Assessment Management
                     </Typography>
                     <Box>
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            startIcon={<AddIcon />}
-                            onClick={handleOpenCreateDialog}
-                            sx={{ mr: 1 }}
-                            disabled={classes.length === 0}
-                        >
-                            Create Assessment
-                        </Button>
+                        {user.role !== 'student' && (
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                startIcon={<AddIcon />}
+                                onClick={handleOpenCreateDialog}
+                                sx={{ mr: 1 }}
+                                disabled={classes.length === 0}
+                            >
+                                Create Assessment
+                            </Button>
+                        )}
                         <IconButton
                             color="primary"
                             onClick={fetchData}
@@ -394,30 +405,46 @@ const AssessmentManagement = () => {
                                         </TableCell>
                                         <TableCell>
                                             <Box display="flex">
-                                                <Tooltip title="Edit">
-                                                    <IconButton
-                                                        color="primary"
-                                                        onClick={() => handleOpenEditDialog(assessment)}
-                                                    >
-                                                        <EditIcon />
-                                                    </IconButton>
-                                                </Tooltip>
-                                                <Tooltip title="View Submissions">
-                                                    <IconButton
-                                                        color="info"
-                                                        onClick={() => handleOpenSubmissionsDialog(assessment)}
-                                                    >
-                                                        <ListIcon />
-                                                    </IconButton>
-                                                </Tooltip>
-                                                <Tooltip title="Delete">
-                                                    <IconButton
-                                                        color="error"
-                                                        onClick={() => handleOpenDeleteDialog(assessment)}
-                                                    >
-                                                        <DeleteIcon />
-                                                    </IconButton>
-                                                </Tooltip>
+                                                {user.role !== 'student' && (
+                                                    <>
+                                                        <Tooltip title="Edit">
+                                                            <IconButton
+                                                                color="primary"
+                                                                onClick={() => handleOpenEditDialog(assessment)}
+                                                            >
+                                                                <EditIcon />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        <Tooltip title="Delete">
+                                                            <IconButton
+                                                                color="error"
+                                                                onClick={() => handleOpenDeleteDialog(assessment)}
+                                                            >
+                                                                <DeleteIcon />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </>
+                                                )}
+                                                {user.role !== 'student' && (
+                                                    <Tooltip title="View Submissions">
+                                                        <IconButton
+                                                            color="info"
+                                                            onClick={() => handleOpenSubmissionsDialog(assessment)}
+                                                        >
+                                                            <ListIcon />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                )}
+                                                {user.role === 'student' && (
+                                                    <Tooltip title="Submit Assessment">
+                                                        <IconButton
+                                                            color="primary"
+                                                            onClick={() => handleOpenSubmitDialog(assessment)}
+                                                        >
+                                                            <AssignmentIcon />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                )}
                                             </Box>
                                         </TableCell>
                                     </TableRow>
@@ -693,6 +720,17 @@ const AssessmentManagement = () => {
                     <Button onClick={() => setOpenSubmissionsDialog(false)}>Close</Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Add AssessmentSubmission dialog at the bottom of the component */}
+            <AssessmentSubmission
+                open={openSubmitDialog}
+                onClose={() => setOpenSubmitDialog(false)}
+                assessment={currentAssessmentForSubmission}
+                onSubmitSuccess={() => {
+                    setSuccess('Assessment submitted successfully');
+                    setTimeout(() => setSuccess(''), 3000);
+                }}
+            />
         </Container>
     );
 };

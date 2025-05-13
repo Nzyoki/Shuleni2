@@ -13,6 +13,7 @@ import ClassManagement from './pages/ClassManagement';
 import StudentManagement from './pages/StudentManagement';
 import AssessmentManagement from './pages/AssessmentManagement';
 import AttendanceManagement from './pages/AttendanceManagement';
+import ResourceManagement from './pages/ResourceManagement';
 import Reports from './pages/Reports';
 import './App.css';
 
@@ -73,11 +74,11 @@ function App() {
                             } />
                             <Route path="resources" element={
                                 <ProtectedRoute requiredPermissions={["manage_resources", "view_resources", "create_resources", "edit_resources"]}>
-                                    <div>Resources Management (Stub)</div>
+                                    <ResourceManagement />
                                 </ProtectedRoute>
                             } />
                             <Route path="assessments" element={
-                                <ProtectedRoute requiredPermissions={["manage_assessments", "view_assessments", "create_assessments", "edit_assessments", "manage_class_assessments", "view_own_assessments"]}>
+                                <ProtectedRoute requiredPermissions={["manage_assessments", "view_assessments", "create_assessments", "edit_assessments", "manage_class_assessments", "view_own_assessments", "submit_assessments", "take_assessments"]}>
                                     <AssessmentManagement />
                                 </ProtectedRoute>
                             } />
