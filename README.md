@@ -117,4 +117,10 @@ The backend provides the following main endpoints:
 
 ## License
 
-[Add your license information here] 
+MIT license
+
+## Members
+-Scolastica Nzyoki
+-Gabriel Kinyua
+-Andrew Ndarua
+-Moureen Mutinda
